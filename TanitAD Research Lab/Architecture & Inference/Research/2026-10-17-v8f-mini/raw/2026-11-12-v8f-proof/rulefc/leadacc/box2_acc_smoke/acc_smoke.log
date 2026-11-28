@@ -1,0 +1,934 @@
+step 200 loss100 0.3689 d100 0.0665 s 13.1
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K25D",
+ "cfg": {
+  "H": 25,
+  "dil": [
+   1,
+   2,
+   4
+  ],
+  "motion": false
+ },
+ "receptive_field_frames": 29,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    10,
+    10
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    9,
+    23,
+    100
+   ],
+   "H": 25,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.1770564168691635,
+   "grad_abs_d_row": 9.64286994934082,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 200,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "d1f94e9fa5f1b224554b016c56495e0a3b954a6882e7be75a279718628b632e0",
+   "sha256_at_read": "d1f94e9fa5f1b224554b016c56495e0a3b954a6882e7be75a279718628b632e0",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 21.2,
+  "read_held_out_s": 2.2,
+  "read_eval_s": 1.1
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 100,
+  "held_out": 20,
+  "eval": 10
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 17.28,
+  "own_commit_at_start_GB": 1.057,
+  "need_GB": 6.95,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 529,
+  "fit_clips": 100,
+  "commit_avail_after_GB": 17.2,
+  "own_commit_after_GB": 1.091
+ },
+ "n_params": 129605,
+ "train": {
+  "steps": 200,
+  "windows_fit": 9202,
+  "seconds": 13.1,
+  "s_per_step": 0.0654,
+  "loss_first1000": 0.7637,
+  "loss_last1000": 0.3689,
+  "d_loss_first1000": 0.0909,
+  "d_loss_last1000": 0.0665,
+  "finite": true,
+  "ckpt_sha256": {
+   "200": "d1f94e9fa5f1b224554b016c56495e0a3b954a6882e7be75a279718628b632e0"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": 0.25620919682514404,
+  "A_derived": 0.26779962269079377,
+  "A_floor": 0.23519641762316615,
+  "A_rel": -0.06964722133102161,
+  "A_lab2": 0.8290807176202364,
+  "n_S": 620,
+  "n_A": 561,
+  "n_A_lab2": 561,
+  "gap_mae_m": 9.119771013144286,
+  "presence_auc": 0.7666722599184085,
+  "A_row217_code": 0.2677996226907937,
+  "A": 0.13394838734545536
+ },
+ "dA_floor_held_out": {
+  "diff": -0.10124803027771079,
+  "ci95": [
+   -0.2774843271271173,
+   0.13095084642807506
+  ],
+  "n_clips": 20,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.6745624314111747,
+  "A_ref": 0.4020082041377867,
+  "dS": {
+   "diff": -0.4183532345860307,
+   "ci95": [
+    -0.7829869661712803,
+    -0.15468726797723314
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": -0.2680598167923314,
+   "ci95": [
+    -0.4582196016298736,
+    -0.011952329307076048
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.5327855539659619,
+  "A_derived": -0.02279988568842559,
+  "A_floor": -0.10161726255707591,
+  "A_rel": 0.11574366768714557,
+  "A_lab2": 0.7931821616123239,
+  "n_S": 133,
+  "n_A": 121,
+  "n_A_lab2": 121,
+  "gap_mae_m": 7.850123910550718,
+  "presence_auc": 0.8852748289690965,
+  "A_row217_code": -0.022799885688425534,
+  "A": -0.1355030732043149
+ },
+ "dA_floor_eval141": {
+  "diff": -0.03388581064723899,
+  "ci95": [
+   -0.15855107286406891,
+   0.4239852320198585
+  ],
+  "n_clips": 10,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-NOT-CARRIED",
+ "eval141_name": "ACCHIST10K-SPEED-ONLY"
+}
+step 200 loss100 0.398 d100 0.0679 s 10.8
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K25DM",
+ "cfg": {
+  "H": 25,
+  "dil": [
+   1,
+   2,
+   4
+  ],
+  "motion": true
+ },
+ "receptive_field_frames": 29,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    10,
+    10
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    9,
+    23,
+    100
+   ],
+   "H": 25,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.16242282092571259,
+   "grad_abs_d_row": 9.286645889282227,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 200,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "a504ca723ce2a9c59e806ed1cb698629bcfabf56545de9f2818df5633066bc5d",
+   "sha256_at_read": "a504ca723ce2a9c59e806ed1cb698629bcfabf56545de9f2818df5633066bc5d",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 0.4,
+  "read_held_out_s": 2.5,
+  "read_eval_s": 1.2
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 100,
+  "held_out": 20,
+  "eval": 10
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 14.94,
+  "own_commit_at_start_GB": 3.207,
+  "need_GB": 5.51,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 529,
+  "fit_clips": 100,
+  "commit_avail_after_GB": 14.94,
+  "own_commit_after_GB": 3.208
+ },
+ "n_params": 197253,
+ "train": {
+  "steps": 200,
+  "windows_fit": 9202,
+  "seconds": 10.8,
+  "s_per_step": 0.0542,
+  "loss_first1000": 0.8494,
+  "loss_last1000": 0.398,
+  "d_loss_first1000": 0.0926,
+  "d_loss_last1000": 0.0679,
+  "finite": true,
+  "ckpt_sha256": {
+   "200": "a504ca723ce2a9c59e806ed1cb698629bcfabf56545de9f2818df5633066bc5d"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": -0.014771103751092446,
+  "A_derived": 0.25738935329686535,
+  "A_floor": 0.23519641762316615,
+  "A_rel": 0.2556330949910506,
+  "A_lab2": 0.8290807176202364,
+  "n_S": 620,
+  "n_A": 561,
+  "n_A_lab2": 561,
+  "gap_mae_m": 8.478539479673616,
+  "presence_auc": 0.7263549652344446,
+  "A_row217_code": 0.25738935329686513,
+  "A": 0.26674891605061773
+ },
+ "dA_floor_held_out": {
+  "diff": 0.031552498427451586,
+  "ci95": [
+   -0.07125017466020181,
+   0.20669422254126668
+  ],
+  "n_clips": 20,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.6745624314111747,
+  "A_ref": 0.4020082041377867,
+  "dS": {
+   "diff": -0.6893335351622671,
+   "ci95": [
+    -0.9152865483844805,
+    -0.4110210297958451
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": -0.13525928808716897,
+   "ci95": [
+    -0.364910047712146,
+    0.09752979080623901
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.07961532362947284,
+  "A_derived": -0.03741804445344639,
+  "A_floor": -0.10161726255707591,
+  "A_rel": -0.03460625617057265,
+  "A_lab2": 0.7931821616123239,
+  "n_S": 133,
+  "n_A": 121,
+  "n_A_lab2": 121,
+  "gap_mae_m": 11.043127897050645,
+  "presence_auc": 0.9427506487379099,
+  "A_row217_code": -0.037418044453446396,
+  "A": -0.04939001326359642
+ },
+ "dA_floor_eval141": {
+  "diff": 0.052227249293479494,
+  "ci95": [
+   -0.026567257830718505,
+   0.25840343020379564
+  ],
+  "n_clips": 10,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-NOT-CARRIED",
+ "eval141_name": "ACCHIST10K-NOT-CARRIED"
+}
+step 200 loss100 0.4238 d100 0.0733 s 3.5
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K10D",
+ "cfg": {
+  "H": 10,
+  "dil": null,
+  "motion": false
+ },
+ "receptive_field_frames": 9,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    10,
+    10
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    8,
+    9,
+    100
+   ],
+   "H": 10,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.09457626193761826,
+   "grad_abs_d_row": 0.33306270837783813,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 200,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "69b681fd96ed8f7dc52b7267d07f24224c160a3453bd6aec37bde74296683f9d",
+   "sha256_at_read": "69b681fd96ed8f7dc52b7267d07f24224c160a3453bd6aec37bde74296683f9d",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 0.4,
+  "read_held_out_s": 1.7,
+  "read_eval_s": 0.8
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 100,
+  "held_out": 20,
+  "eval": 10
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 14.2,
+  "own_commit_at_start_GB": 3.958,
+  "need_GB": 5.51,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 529,
+  "fit_clips": 100,
+  "commit_avail_after_GB": 14.2,
+  "own_commit_after_GB": 3.959
+ },
+ "n_params": 109061,
+ "train": {
+  "steps": 200,
+  "windows_fit": 9202,
+  "seconds": 3.5,
+  "s_per_step": 0.0176,
+  "loss_first1000": 0.8247,
+  "loss_last1000": 0.4238,
+  "d_loss_first1000": 0.0824,
+  "d_loss_last1000": 0.0733,
+  "finite": true,
+  "ckpt_sha256": {
+   "200": "69b681fd96ed8f7dc52b7267d07f24224c160a3453bd6aec37bde74296683f9d"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": 0.23891694968428975,
+  "A_derived": 0.2384730534877365,
+  "A_floor": 0.23519641762316615,
+  "A_rel": 0.06970721858825484,
+  "A_lab2": 0.8290807176202364,
+  "n_S": 620,
+  "n_A": 561,
+  "n_A_lab2": 561,
+  "gap_mae_m": 8.37190173188547,
+  "presence_auc": 0.7722082682243873,
+  "A_row217_code": 0.2384730534877366,
+  "A": 0.20718117752243215
+ },
+ "dA_floor_held_out": {
+  "diff": -0.028015240100734,
+  "ci95": [
+   -0.07692808993351676,
+   0.06635794949037103
+  ],
+  "n_clips": 20,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.6745624314111747,
+  "A_ref": 0.4020082041377867,
+  "dS": {
+   "diff": -0.4356454817268849,
+   "ci95": [
+    -0.8180216864723956,
+    -0.12856419669453995
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": -0.19482702661535456,
+   "ci95": [
+    -0.4508537265764929,
+    -0.024394262867746076
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.38597566575360975,
+  "A_derived": -0.1834918548654209,
+  "A_floor": -0.10161726255707591,
+  "A_rel": -0.4430419170288873,
+  "A_lab2": 0.7931821616123239,
+  "n_S": 133,
+  "n_A": 121,
+  "n_A_lab2": 121,
+  "gap_mae_m": 6.485211835084138,
+  "presence_auc": 0.9114791224345364,
+  "A_row217_code": -0.18349185486542094,
+  "A": -0.16537729834196913
+ },
+ "dA_floor_eval141": {
+  "diff": -0.06376003578489321,
+  "ci95": [
+   -0.10700415283689953,
+   0.10246923300403021
+  ],
+  "n_clips": 10,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-NOT-CARRIED",
+ "eval141_name": "ACCHIST10K-SPEED-ONLY"
+}
+step 200 loss100 0.3449 d100 0.065 s 12.2
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K40D",
+ "cfg": {
+  "H": 40,
+  "dil": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "motion": false
+ },
+ "receptive_field_frames": 61,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    10,
+    10
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    9,
+    38,
+    100
+   ],
+   "H": 40,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.1049538180232048,
+   "grad_abs_d_row": 5.7253336906433105,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 200,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "0f4748b9001e6ba357ddedf075a4c9844058eabd43f4c9cabaaefe2533e0a3e3",
+   "sha256_at_read": "0f4748b9001e6ba357ddedf075a4c9844058eabd43f4c9cabaaefe2533e0a3e3",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 0.4,
+  "read_held_out_s": 2.6,
+  "read_eval_s": 1.3
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 100,
+  "held_out": 20,
+  "eval": 10
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 14.21,
+  "own_commit_at_start_GB": 3.958,
+  "need_GB": 5.51,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 529,
+  "fit_clips": 100,
+  "commit_avail_after_GB": 14.21,
+  "own_commit_after_GB": 3.959
+ },
+ "n_params": 150149,
+ "train": {
+  "steps": 200,
+  "windows_fit": 9202,
+  "seconds": 12.2,
+  "s_per_step": 0.0611,
+  "loss_first1000": 0.778,
+  "loss_last1000": 0.3449,
+  "d_loss_first1000": 0.0856,
+  "d_loss_last1000": 0.065,
+  "finite": true,
+  "ckpt_sha256": {
+   "200": "0f4748b9001e6ba357ddedf075a4c9844058eabd43f4c9cabaaefe2533e0a3e3"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": 0.17256186457426637,
+  "A_derived": 0.2592604238436969,
+  "A_floor": 0.23519641762316615,
+  "A_rel": 0.15956898183797308,
+  "A_lab2": 0.8290807176202364,
+  "n_S": 620,
+  "n_A": 561,
+  "n_A_lab2": 561,
+  "gap_mae_m": 8.582263530332579,
+  "presence_auc": 0.7758014954956844,
+  "A_row217_code": 0.25926042384369685,
+  "A": 0.21309408697574234
+ },
+ "dA_floor_held_out": {
+  "diff": -0.022102330647423812,
+  "ci95": [
+   -0.12719872149182326,
+   0.15447298764638398
+  ],
+  "n_clips": 20,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.6745624314111747,
+  "A_ref": 0.4020082041377867,
+  "dS": {
+   "diff": -0.5020005668369083,
+   "ci95": [
+    -0.9107191741690369,
+    0.015683450131814314
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": -0.18891411716204437,
+   "ci95": [
+    -0.3419723700534432,
+    -0.07557559901417865
+   ],
+   "n_clips": 20,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.41244838238091747,
+  "A_derived": -0.2234302110273455,
+  "A_floor": -0.10161726255707591,
+  "A_rel": 0.36441687313041893,
+  "A_lab2": 0.7931821616123239,
+  "n_S": 133,
+  "n_A": 121,
+  "n_A_lab2": 121,
+  "gap_mae_m": 11.48641222141407,
+  "presence_auc": 0.9241707949988205,
+  "A_row217_code": -0.22343021102734534,
+  "A": -0.1248677211598096
+ },
+ "dA_floor_eval141": {
+  "diff": -0.023250458602733684,
+  "ci95": [
+   -0.14184355146052657,
+   0.0596132641447496
+  ],
+  "n_clips": 10,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-NOT-CARRIED",
+ "eval141_name": "ACCHIST10K-SPEED-ONLY"
+}
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "job": "smoke (names nothing)",
+ "arms": {
+  "K25D": {
+   "error": null,
+   "controls": {
+    "c2_disjoint": true,
+    "c5_token_bytes": true,
+    "c6_window": true,
+    "c7_d_trained": true,
+    "c1_run": true,
+    "c4_checkpoint": true,
+    "c3_planted_read": true
+   },
+   "timing": {
+    "load_fit_s": 21.2,
+    "read_held_out_s": 2.2,
+    "read_eval_s": 1.1
+   },
+   "s_per_step": 0.0654,
+   "wall_s": 48.0,
+   "guard": {
+    "amendment": "card ADD149 AM1+AM2+AM3",
+    "commit_avail_at_start_GB": 17.28,
+    "own_commit_at_start_GB": 1.057,
+    "need_GB": 6.95,
+    "violations": 0
+   }
+  },
+  "K25DM": {
+   "error": null,
+   "controls": {
+    "c2_disjoint": true,
+    "c5_token_bytes": true,
+    "c6_window": true,
+    "c7_d_trained": true,
+    "c1_run": true,
+    "c4_checkpoint": true,
+    "c3_planted_read": true
+   },
+   "timing": {
+    "load_fit_s": 0.4,
+    "read_held_out_s": 2.5,
+    "read_eval_s": 1.2
+   },
+   "s_per_step": 0.0542,
+   "wall_s": 16.0,
+   "guard": {
+    "amendment": "card ADD149 AM1+AM2+AM3",
+    "commit_avail_at_start_GB": 14.94,
+    "own_commit_at_start_GB": 3.207,
+    "need_GB": 5.51,
+    "violations": 0
+   }
+  },
+  "K10D": {
+   "error": null,
+   "controls": {
+    "c2_disjoint": true,
+    "c5_token_bytes": true,
+    "c6_window": true,
+    "c7_d_trained": true,
+    "c1_run": true,
+    "c4_checkpoint": true,
+    "c3_planted_read": true
+   },
+   "timing": {
+    "load_fit_s": 0.4,
+    "read_held_out_s": 1.7,
+    "read_eval_s": 0.8
+   },
+   "s_per_step": 0.0176,
+   "wall_s": 7.2,
+   "guard": {
+    "amendment": "card ADD149 AM1+AM2+AM3",
+    "commit_avail_at_start_GB": 14.2,
+    "own_commit_at_start_GB": 3.958,
+    "need_GB": 5.51,
+    "violations": 0
+   }
+  },
+  "K40D": {
+   "error": null,
+   "controls": {
+    "c2_disjoint": true,
+    "c5_token_bytes": true,
+    "c6_window": true,
+    "c7_d_trained": true,
+    "c1_run": true,
+    "c4_checkpoint": true,
+    "c3_planted_read": true
+   },
+   "timing": {
+    "load_fit_s": 0.4,
+    "read_held_out_s": 2.6,
+    "read_eval_s": 1.3
+   },
+   "s_per_step": 0.0611,
+   "wall_s": 17.3,
+   "guard": {
+    "amendment": "card ADD149 AM1+AM2+AM3",
+    "commit_avail_at_start_GB": 14.21,
+    "own_commit_at_start_GB": 3.958,
+    "need_GB": 5.51,
+    "violations": 0
+   }
+  }
+ },
+ "per_arm": {
+  "K25D": {
+   "s_per_step": 0.0654,
+   "load_s_per_clip": 0.212,
+   "read_ho_s_per_clip": 0.11000000000000001,
+   "read_ev_s_per_clip": 0.11000000000000001
+  },
+  "K25DM": {
+   "s_per_step": 0.0542,
+   "load_s_per_clip": 0.004,
+   "read_ho_s_per_clip": 0.125,
+   "read_ev_s_per_clip": 0.12
+  },
+  "K10D": {
+   "s_per_step": 0.0176,
+   "load_s_per_clip": 0.004,
+   "read_ho_s_per_clip": 0.08499999999999999,
+   "read_ev_s_per_clip": 0.08
+  },
+  "K40D": {
+   "s_per_step": 0.0611,
+   "load_s_per_clip": 0.004,
+   "read_ho_s_per_clip": 0.13,
+   "read_ev_s_per_clip": 0.13
+  }
+ },
+ "projection": {
+  "hours_per_arm": {
+   "K25D": 0.81,
+   "K25DM": 0.61,
+   "K10D": 0.3,
+   "K40D": 0.67
+  },
+  "stage2_hours": 1.63,
+  "total_hours": 4.02,
+  "limit_hours": 11.0,
+  "stop": false
+ }
+}
+QUEUE-COMPLETE 2026-11-28T11:09:20

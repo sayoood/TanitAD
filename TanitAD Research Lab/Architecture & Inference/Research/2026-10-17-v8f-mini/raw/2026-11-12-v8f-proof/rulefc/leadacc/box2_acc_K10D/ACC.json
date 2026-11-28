@@ -1,0 +1,224 @@
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K10D",
+ "cfg": {
+  "H": 10,
+  "dil": null,
+  "motion": false
+ },
+ "receptive_field_frames": 9,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    8,
+    9,
+    100
+   ],
+   "H": 10,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.1183045506477356,
+   "grad_abs_d_row": 0.9419105052947998,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "fbe1f6a9311c265b2ae92a9d4d983ee655c810c29b2cde6d24a29a071d012947",
+   "sha256_at_read": "fbe1f6a9311c265b2ae92a9d4d983ee655c810c29b2cde6d24a29a071d012947",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 16.7,
+  "read_held_out_s": 36.9,
+  "read_eval_s": 11.8
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 3984,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 17.23,
+  "own_commit_at_start_GB": 1.058,
+  "need_GB": 7.34,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 512,
+  "fit_clips": 3984,
+  "commit_avail_after_GB": 17.14,
+  "own_commit_after_GB": 1.141
+ },
+ "n_params": 109061,
+ "train": {
+  "steps": 30000,
+  "windows_fit": 366304,
+  "seconds": 527.9,
+  "s_per_step": 0.0176,
+  "loss_first1000": 0.706,
+  "loss_last1000": 0.2586,
+  "d_loss_first1000": 0.0782,
+  "d_loss_last1000": 0.0684,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "b543344cafcc412774d728cf77380f413c06e59d520443804576557ccba658af",
+   "20000": "885a110d393bd9c7c02bb0ee19a9e912b704b91421bd64aa5996dd02585a7fdc",
+   "30000": "fbe1f6a9311c265b2ae92a9d4d983ee655c810c29b2cde6d24a29a071d012947"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": 0.4398269785398198,
+  "A_derived": 0.20817085753156508,
+  "A_floor": 0.2781551169158842,
+  "A_rel": 0.23238731669869495,
+  "A_lab2": 0.8103613153724467,
+  "n_S": 11623,
+  "n_A": 10325,
+  "n_A_lab2": 10325,
+  "gap_mae_m": 6.149444979887456,
+  "presence_auc": 0.9068742589211659,
+  "A_row217_code": 0.20817085753156495,
+  "A": 0.3156271214086945
+ },
+ "held_out_halves": [
+  {
+   "S": 0.48080015729456055,
+   "A_derived": 0.20850923675593575,
+   "A_floor": 0.289391072470456,
+   "A_rel": 0.22852172165206316,
+   "A_lab2": 0.7914386767563883,
+   "n_S": 6122,
+   "n_A": 5468,
+   "n_A_lab2": 5468,
+   "gap_mae_m": 5.619210795877514,
+   "presence_auc": 0.9049906708509532,
+   "A_row217_code": 0.2085092367559357,
+   "A": 0.3194924354717957
+  },
+  {
+   "S": 0.39986262197099337,
+   "A_derived": 0.207904638342807,
+   "A_floor": 0.26420740899578493,
+   "A_rel": 0.2374655977416972,
+   "A_lab2": 0.8359149538095382,
+   "n_S": 5501,
+   "n_A": 4857,
+   "n_A_lab2": 4857,
+   "gap_mae_m": 6.727774416044257,
+   "presence_auc": 0.9083019583871631,
+   "A_row217_code": 0.20790463834280698,
+   "A": 0.31181970032162143
+  }
+ ],
+ "dA_floor_held_out": {
+  "diff": 0.037472004492810296,
+  "ci95": [
+   0.012274676972959723,
+   0.061397825549829324
+  ],
+  "n_clips": 443,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.3927809440031216,
+  "A_ref": 0.20534482775305718,
+  "dS": {
+   "diff": 0.047046034536698256,
+   "ci95": [
+    -0.049285224941981426,
+    0.13962518384565628
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": 0.1102822936556373,
+   "ci95": [
+    0.06204556128846354,
+    0.15587950773548861
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.415226794325855,
+  "A_derived": 0.15921684404950404,
+  "A_floor": 0.2108976415313526,
+  "A_rel": 0.1795674137451801,
+  "A_lab2": 0.7536037785437384,
+  "n_S": 3430,
+  "n_A": 3035,
+  "n_A_lab2": 3035,
+  "gap_mae_m": 4.88226912032091,
+  "presence_auc": 0.8833184297015743,
+  "A_row217_code": 0.15921684404950412,
+  "A": 0.23999616465166818
+ },
+ "dA_floor_eval141": {
+  "diff": 0.029098523120315578,
+  "ci95": [
+   -0.02507822435197257,
+   0.08628251532726548
+  ],
+  "n_clips": 141,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-CARRIED",
+ "eval141_name": "ACCHIST10K-SPEED-ONLY"
+}

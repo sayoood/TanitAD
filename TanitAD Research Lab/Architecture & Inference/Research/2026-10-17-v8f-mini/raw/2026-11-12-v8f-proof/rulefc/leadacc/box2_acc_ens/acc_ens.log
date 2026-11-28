@@ -1,0 +1,328 @@
+D:\tanitad\leadacc\train_acc_box2.py:46: RuntimeWarning: overflow encountered in exp
+  P[e] = 1.0 / (1.0 + np.exp(-o[:, 0]))
+{
+ "card": "PREREG_V8F_PROOF_ADD153_AM1",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K25D",
+ "controls": {
+  "e2_checkpoints": {
+   "heads": [
+    {
+     "ckpt": "D:/tanitad/leadacc/K25D/head_30000.pt",
+     "sha256_expected": "40433c9b4416dfe30cd34f3957f7ef785146f798839861c873c2ee5472910270",
+     "sha256_read": "40433c9b4416dfe30cd34f3957f7ef785146f798839861c873c2ee5472910270",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25D_s149/head_30000.pt",
+     "sha256_expected": "f5dcc2f5af44d8382ac35b8336b78964f071bfd3e0115f596d34f1bd6012ab96",
+     "sha256_read": "f5dcc2f5af44d8382ac35b8336b78964f071bfd3e0115f596d34f1bd6012ab96",
+     "equal": true
+    },
+    {
+     "ckpt": "D:/tanitad/leadacc/K25DS/head_30000.pt",
+     "sha256_expected": "b762cde6e70239bb74b785de5ca302f382ef8e4fa4ba5016a68fabe1307cb93a",
+     "sha256_read": "b762cde6e70239bb74b785de5ca302f382ef8e4fa4ba5016a68fabe1307cb93a",
+     "equal": true
+    }
+   ],
+   "PASS": true
+  },
+  "e1_single_reproduces": {
+   "S": [
+    0.5050122955277524,
+    0.5050122955277524
+   ],
+   "A": [
+    0.35883438251222693,
+    0.35883438251222693
+   ],
+   "PASS": true
+  },
+  "e3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "PASS": true
+  }
+ },
+ "sha256": {
+  "ens_read_box2.py": "2e96959942180018e64d8965b6fbcad91682d24e87d3ec3adff55032bd79c198",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f"
+ },
+ "split": {
+  "held_out": 443,
+  "eval": 141
+ },
+ "read_seconds": 87.8,
+ "single": {
+  "held_out": {
+   "S": 0.5050122955277524,
+   "A": 0.35883438251222693,
+   "A_derived": 0.292644832968439,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.3207740492892434,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 6.446480889072501,
+   "presence_auc": 0.9026990177568176
+  },
+  "eval141": {
+   "S": 0.5239166440901861,
+   "A": 0.2598652897306119,
+   "A_derived": 0.1950674010697452,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.2762745631560761,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 5.858216356328442,
+   "presence_auc": 0.9011604166825027
+  },
+  "dA_floor_held_out": {
+   "diff": 0.08067926559634275,
+   "ci95": [
+    0.04425445840623783,
+    0.11786675064045604
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.048967648199259306,
+   "ci95": [
+    -0.012034074522124119,
+    0.1209291576203759
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.5161474739923745,
+    "A": 0.3677125520938113,
+    "A_derived": 0.3077814205936133,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.3089060576017652,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 5.948422359904276,
+    "presence_auc": 0.8965007549711876
+   },
+   {
+    "S": 0.49514242411912207,
+    "A": 0.34940435319564245,
+    "A_derived": 0.2760738053689842,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.33665281956646825,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 6.98971615574015,
+    "presence_auc": 0.9084414306999169
+   }
+  ]
+ },
+ "ENS2": {
+  "held_out": {
+   "S": 0.5285951766933853,
+   "A": 0.3775255533138475,
+   "A_derived": 0.3182806877689144,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.3665165954177802,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 5.845576112521468,
+   "presence_auc": 0.9182865882261452
+  },
+  "eval141": {
+   "S": 0.47760727402854647,
+   "A": 0.2857329427386093,
+   "A_derived": 0.22269940081911105,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.31055829559267234,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 5.284275568820503,
+   "presence_auc": 0.9053100260248409
+  },
+  "dA_floor_held_out": {
+   "diff": 0.09937043639796334,
+   "ci95": [
+    0.06792452847175247,
+    0.13360991736220482
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.07483530120725668,
+   "ci95": [
+    0.015177206362589294,
+    0.13989166458563693
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.498616538091568,
+    "A": 0.37714482167938024,
+    "A_derived": 0.320497722374095,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.34624776956138686,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 5.405294860539737,
+    "presence_auc": 0.9154563697884852
+   },
+   {
+    "S": 0.563554696634222,
+    "A": 0.3794142544717554,
+    "A_derived": 0.3164010852409159,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.3930168116654775,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 6.325793374794833,
+    "presence_auc": 0.9211882775430248
+   }
+  ],
+  "name": "ACCHIST10K-ENS2-CARRIED",
+  "eval141_name": "ACCHIST10K-ENS2-SPEED-ONLY"
+ },
+ "ENS3": {
+  "held_out": {
+   "S": 0.5411804485117288,
+   "A": 0.3942152116923615,
+   "A_derived": 0.3326832594733107,
+   "A_floor": 0.2781551169158842,
+   "A_rel": 0.3878190280480375,
+   "A_lab2": 0.8103613153724467,
+   "n_S": 11623,
+   "n_A": 10325,
+   "n_A_lab2": 10325,
+   "gap_mae_m": 5.7301316906561,
+   "presence_auc": 0.9275419239973505
+  },
+  "eval141": {
+   "S": 0.499374738873523,
+   "A": 0.29370044888669394,
+   "A_derived": 0.24008530231695444,
+   "A_floor": 0.2108976415313526,
+   "A_rel": 0.3147743206661226,
+   "A_lab2": 0.7536037785437384,
+   "n_S": 3430,
+   "n_A": 3035,
+   "n_A_lab2": 3035,
+   "gap_mae_m": 5.034085690904666,
+   "presence_auc": 0.9083252352117334
+  },
+  "dA_floor_held_out": {
+   "diff": 0.11606009477647733,
+   "ci95": [
+    0.08677134698550598,
+    0.14857149067732797
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "dA_floor_eval141": {
+   "diff": 0.08280280735534135,
+   "ci95": [
+    0.02980971912405178,
+    0.14501787508446776
+   ],
+   "n_clips": 141,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+  },
+  "held_out_halves": [
+   {
+    "S": 0.5152190030440397,
+    "A": 0.3949980352255193,
+    "A_derived": 0.33629741154391796,
+    "A_floor": 0.289391072470456,
+    "A_rel": 0.363387868275819,
+    "A_lab2": 0.7914386767563883,
+    "n_S": 6122,
+    "n_A": 5468,
+    "n_A_lab2": 5468,
+    "gap_mae_m": 5.206709676313518,
+    "presence_auc": 0.9239749262186229
+   },
+   {
+    "S": 0.5745791609325198,
+    "A": 0.3943349982630699,
+    "A_derived": 0.32907844938921355,
+    "A_floor": 0.26420740899578493,
+    "A_rel": 0.4190044847856139,
+    "A_lab2": 0.8359149538095382,
+    "n_S": 5501,
+    "n_A": 4857,
+    "n_A_lab2": 4857,
+    "gap_mae_m": 6.301031054664526,
+    "presence_auc": 0.9312599287460358
+   }
+  ],
+  "name": "ACCHIST10K-ENS3-CARRIED",
+  "eval141_name": "ACCHIST10K-ENS3-SPEED-ONLY"
+ },
+ "ENS2_vs_single": {
+  "held_out": {
+   "dA": {
+    "diff": 0.018691170801620582,
+    "ci95": [
+     0.0013498579955690748,
+     0.036927039650076474
+    ],
+    "n_clips": 443,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   },
+   "dS": {
+    "diff": 0.023582881165632785,
+    "ci95": [
+     -0.01952986795077145,
+     0.06929932156733522
+    ],
+    "n_clips": 443,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   }
+  },
+  "eval141": {
+   "dA": {
+    "diff": 0.02586765300799737,
+    "ci95": [
+     -0.0020905478150233733,
+     0.05123028160248291
+    ],
+    "n_clips": 141,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   },
+   "dS": {
+    "diff": -0.046309370061639654,
+    "ci95": [
+     -0.11785322590109007,
+     0.023614270918129752
+    ],
+    "n_clips": 141,
+    "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 152; another draw of clips, one training run per arm"
+   }
+  }
+ },
+ "controls_all_pass": true,
+ "consequence": "SHORTFALL-NAMED: eval-141 A 0.2857 (dA_floor lower bound 0.0152); next levers named from the measured terms"
+}
+QUEUE-COMPLETE 2026-11-28T14:10:32

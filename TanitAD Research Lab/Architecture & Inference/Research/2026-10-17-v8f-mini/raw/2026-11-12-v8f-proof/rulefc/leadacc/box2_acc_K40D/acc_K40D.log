@@ -1,0 +1,203 @@
+step 10000 loss100 0.367 d100 0.0705 s 621.9
+step 20000 loss100 0.2484 d100 0.0599 s 1247.0
+step 30000 loss100 0.2108 d100 0.0598 s 1868.4
+{
+ "card": "PREREG_V8F_PROOF_ADD153",
+ "tier": "T0 (a head on cached tokens of logged frames); never driving performance",
+ "arm": "K40D",
+ "cfg": {
+  "H": 40,
+  "dil": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "motion": false
+ },
+ "receptive_field_frames": 61,
+ "label_run": 5,
+ "controls": {
+  "c2_disjoint": {
+   "fit_and_held_out": 0,
+   "fit_and_eval": 0,
+   "PASS": true
+  },
+  "c5_token_bytes": {
+   "fit_equal": [
+    50,
+    50
+   ],
+   "held_out_equal": [
+    20,
+    20
+   ],
+   "eval_equal": [
+    20,
+    20
+   ],
+   "planted_offset_differs": true,
+   "PASS": true
+  },
+  "c6_window": {
+   "frames_checked": [
+    9,
+    38,
+    100
+   ],
+   "H": 40,
+   "PASS": true
+  },
+  "c7_d_trained": {
+   "d_term_step1": 0.09338575601577759,
+   "grad_abs_d_row": 2.1671314239501953,
+   "grad_abs_other_rows": 0.0,
+   "PASS": true
+  },
+  "c1_run": {
+   "guard_violations": 0,
+   "steps_done": 30000,
+   "PASS": true
+  },
+  "c4_checkpoint": {
+   "sha256_at_save": "0507596222a1d15ae599af0f0cfdaf98d16a52740909a2c5c90cb6e84d34095f",
+   "sha256_at_read": "0507596222a1d15ae599af0f0cfdaf98d16a52740909a2c5c90cb6e84d34095f",
+   "PASS": true
+  },
+  "c3_planted_read": {
+   "S": 1.0,
+   "A": 1.0,
+   "A_derived": 1.0,
+   "PASS": true
+  }
+ },
+ "timing": {
+  "load_fit_s": 17.0,
+  "read_held_out_s": 145.7,
+  "read_eval_s": 44.4
+ },
+ "sha256": {
+  "leadspeed.py": "3466cd8164d325f384c32e4517aba5742a16f4c99caa90225deec0d6e77932df",
+  "leadacc.py": "d45dc5a5a17837f0b23e429ae9e04f26ea0165b5e2cd6dbd36324cf3befdec2f",
+  "train_full_box2.py": "0433cde4195e7fa0f74dfec43a4879ddef78945ed81dd4685d9dfbb8ce4171ff",
+  "train_acc_box2.py": "6f5b0bb43f06172501ad5ec2a09387910949cf69cedd5f277266c35a1fa0cae6"
+ },
+ "seeds": {
+  "split": 148,
+  "train": 148
+ },
+ "split": {
+  "with_labels": 4427,
+  "fit_all": 3984,
+  "fit_used": 3984,
+  "held_out": 443,
+  "eval": 141
+ },
+ "guard": {
+  "amendment": "card ADD149 AM1+AM2+AM3",
+  "commit_avail_at_start_GB": 17.18,
+  "own_commit_at_start_GB": 1.057,
+  "need_GB": 7.34,
+  "violations": 0
+ },
+ "load": {
+  "tokens": "read-only memmap (card ADD149 AM3)",
+  "touch_check": 512,
+  "fit_clips": 3984,
+  "commit_avail_after_GB": 17.09,
+  "own_commit_after_GB": 1.14
+ },
+ "n_params": 150149,
+ "train": {
+  "steps": 30000,
+  "windows_fit": 366304,
+  "seconds": 1868.4,
+  "s_per_step": 0.0623,
+  "loss_first1000": 0.7105,
+  "loss_last1000": 0.2026,
+  "d_loss_first1000": 0.0761,
+  "d_loss_last1000": 0.0569,
+  "finite": true,
+  "ckpt_sha256": {
+   "10000": "eab9f9ec6328e22a547979c12bfe9e97981d6372f553797708640d764d9d5926",
+   "20000": "b165832bc3c66d30631ea938d8dbacdae5704e72fde0a88571d492b35c157dac",
+   "30000": "0507596222a1d15ae599af0f0cfdaf98d16a52740909a2c5c90cb6e84d34095f"
+  }
+ },
+ "ref": {
+  "ckpt": "D:/tanitad/leadspeed/all/head_30000.pt",
+  "sha256": "83faaa6d355562f7341b946d7c2ccee4b3c39b349bd848c4b94af9d4f0cc41d5"
+ },
+ "held_out": {
+  "S": 0.5081195613119055,
+  "A_derived": 0.2944266759091792,
+  "A_floor": 0.2781551169158842,
+  "A_rel": 0.3080146788773508,
+  "A_lab2": 0.8103613153724467,
+  "n_S": 11623,
+  "n_A": 10325,
+  "n_A_lab2": 10325,
+  "gap_mae_m": 6.200121642790123,
+  "presence_auc": 0.9076766145080387,
+  "A_row217_code": 0.2944266759091793,
+  "A": 0.34459726066628077
+ },
+ "dA_floor_held_out": {
+  "diff": 0.06644214375039659,
+  "ci95": [
+   0.03450428438127803,
+   0.09911867982206166
+  ],
+  "n_clips": 443,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "paired_vs_ref_held_out": {
+  "S_ref": 0.3927809440031216,
+  "A_ref": 0.20534482775305718,
+  "dS": {
+   "diff": 0.11533861730878425,
+   "ci95": [
+    0.02341207268519271,
+    0.2100666609614278
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  },
+  "dA": {
+   "diff": 0.1392524329132236,
+   "ci95": [
+    0.09723631686468329,
+    0.1784773676144608
+   ],
+   "n_clips": 443,
+   "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 150; another draw of clips, one training run per arm"
+  }
+ },
+ "eval141": {
+  "S": 0.4135987955719081,
+  "A_derived": 0.18819969168007092,
+  "A_floor": 0.2108976415313526,
+  "A_rel": 0.2508824570260631,
+  "A_lab2": 0.7536037785437384,
+  "n_S": 3430,
+  "n_A": 3035,
+  "n_A_lab2": 3035,
+  "gap_mae_m": 5.607288908852235,
+  "presence_auc": 0.9055954001877513,
+  "A_row217_code": 0.18819969168007106,
+  "A": 0.24492348696920777
+ },
+ "dA_floor_eval141": {
+  "diff": 0.03402584543785517,
+  "ci95": [
+   -0.027067086013982236,
+   0.10050429239808167
+  ],
+  "n_clips": 141,
+  "estimator": "clip-cluster bootstrap, paired, 2000 resamples, seed 151; another draw of clips, one training run per arm"
+ },
+ "controls_all_pass": true,
+ "name": "ACCHIST10K-CARRIED",
+ "eval141_name": "ACCHIST10K-SPEED-ONLY"
+}
+QUEUE-COMPLETE 2026-11-28T13:06:05
