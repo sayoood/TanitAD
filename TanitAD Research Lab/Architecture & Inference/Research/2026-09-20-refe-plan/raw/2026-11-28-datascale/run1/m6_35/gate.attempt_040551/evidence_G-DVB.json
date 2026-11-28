@@ -1,0 +1,105 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "f4d46213e343a70b962b9561dd897a715c4849e20e84ddabdbb7cea58a65aa0e",
+  "commit": "98e934e5d33ba676a943ff3c3715fd7009b31575",
+  "profile": "refe_ds_ep_s0",
+  "tree_sha256": "7b90f02d440638ef05f9402a73850ddaf25730ed677a60fda1fa43708b95b516"
+ },
+ "check": "G-DVB",
+ "details": {
+  "build_rc": 0,
+  "built": {
+   "batch": 32,
+   "cv_rule": {
+    "ci": "95_percentile",
+    "estimator": "p5c_read.Boot paired log-cluster",
+    "guard": [
+     "nc",
+     "dac",
+     "ttc",
+     "ep",
+     "c"
+    ],
+    "guard_rule": "ci_hi_delta_ge_0",
+    "margin": "ci_lo_gain_gt_0",
+    "n_boot": 10000,
+    "seed": 20260927
+   },
+   "gamma": 2.0,
+   "loss": "qfocal",
+   "lr": [
+    0.0003
+   ],
+   "mlp_hidden": 0,
+   "mlp_last_layer_abs_sum_init": null,
+   "n_trainable_params": 257,
+   "optimizer": "Adam",
+   "permute_labels_seed": -1,
+   "rows": [
+    2
+   ],
+   "save_steps": [
+    0,
+    250,
+    500,
+    1000,
+    2000
+   ],
+   "seed": 0,
+   "select": "cv5m",
+   "steps": 2000
+  },
+  "cv_logs": 35,
+  "cv_rule": {
+   "ci": "95_percentile",
+   "estimator": "p5c_read.Boot paired log-cluster",
+   "guard": [
+    "nc",
+    "dac",
+    "ttc",
+    "ep",
+    "c"
+   ],
+   "guard_rule": "ci_hi_delta_ge_0",
+   "margin": "ci_lo_gain_gt_0",
+   "n_boot": 10000,
+   "seed": 20260927
+  },
+  "n_trainable_params_expected": 257
+ },
+ "finished_utc": "2026-11-28T03:40:20Z",
+ "inputs_read": {
+  "--cache-index": {
+   "bytes": 437102,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+   "sha256": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03"
+  },
+  "--heldout-logs": {
+   "bytes": 936,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+   "sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902"
+  },
+  "--init-from": {
+   "bytes": 1288515000,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "F:/safehead_cache/ckpt/C1/model_final.pt",
+   "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+  },
+  "--navtest-logs": {
+   "bytes": 5440,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+   "sha256": "b52ac6866933b570cd319564232715560860653338f117b0183d645052092cc5"
+  }
+ },
+ "reasons": [],
+ "rehearsal": false,
+ "status": "PASS"
+}

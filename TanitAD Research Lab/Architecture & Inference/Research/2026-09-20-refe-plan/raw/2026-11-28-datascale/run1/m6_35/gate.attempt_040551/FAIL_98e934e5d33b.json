@@ -1,0 +1,129 @@
+{
+ "binding": {
+  "argv": [
+   "--cache-index",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+   "--init-from",
+   "F:/safehead_cache/ckpt/C1/model_final.pt",
+   "--heldout-logs",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+   "--navtest-logs",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+   "--steps",
+   "2000",
+   "--lr",
+   "0.0003",
+   "--batch",
+   "32",
+   "--gamma",
+   "2.0",
+   "--save-steps",
+   "0,250,500,1000,2000",
+   "--rows",
+   "2",
+   "--select",
+   "cv5m",
+   "--out",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/lc",
+   "--seed",
+   "0"
+  ],
+  "argv_sha256": "f4d46213e343a70b962b9561dd897a715c4849e20e84ddabdbb7cea58a65aa0e",
+  "commit": "98e934e5d33ba676a943ff3c3715fd7009b31575",
+  "data": {
+   "--cache-index": {
+    "bytes": 437102,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+    "sha256": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03"
+   },
+   "--heldout-logs": {
+    "bytes": 936,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+    "sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902"
+   },
+   "--init-from": {
+    "bytes": 1288515000,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "F:/safehead_cache/ckpt/C1/model_final.pt",
+    "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+   },
+   "--navtest-logs": {
+    "bytes": 5440,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+    "sha256": "b52ac6866933b570cd319564232715560860653338f117b0183d645052092cc5"
+   }
+  },
+  "data_sha256": "62dbbdb53668d3e56abc3bc6efa6b54cde6e173ae927793081fb94b881b35cf4",
+  "gate_inputs": {},
+  "profile": "refe_ds_ep_s0",
+  "trainer": "refe/safehead_train.py",
+  "tree_sha256": "7b90f02d440638ef05f9402a73850ddaf25730ed677a60fda1fa43708b95b516"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "0ca28b77e4d3b58d69659d94cc2b381bba6aa7cf755795082a68c0485337bc71",
+   "finished_utc": "2026-11-28T03:40:51Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "360dda9e7892c1306a4c5daae19649e28b8eb303235c7464bd491742452d3be4",
+   "finished_utc": "2026-11-28T03:46:53Z",
+   "na_reason": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
+   "reasons": [
+    "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock"
+   ],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "b44c57280e39fbc0538c301acc1be4b0bd9b9b37fc574517269ac7eddbb93e10",
+   "finished_utc": "2026-11-28T03:40:20Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "28303a58ce6e9511d22e83fb499fb3285f7a5e687efe8f02493a19e7f549b49f",
+   "finished_utc": "2026-11-28T03:40:28Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "15be8327a3777c2567ea8f89ad84e0474ddf402d964b15689566c84879d6af0c",
+   "finished_utc": "2026-11-28T03:40:06Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "8708233fe16e9c758564fd61c9fb080175dff21716a0f2afdea1a9139f0eeb6d",
+   "finished_utc": "2026-11-28T03:40:28Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "cb5eb9cff9652a7c7c6181e390dfa31899128a10078f60b5f87a7c9af4aef641",
+   "finished_utc": "2026-11-28T03:46:53Z",
+   "reasons": [
+    "test_safehead_ds.py: rc 1, 'ZZSHDS_PASS' NOT seen"
+   ],
+   "status": "FAIL"
+  }
+ },
+ "created_utc": "2026-11-28T03:47:21Z",
+ "gate_sha256": "3a1df19491bc8d0f03d4d509cadd02060985f1795b42bec249c679f07e2e3c22",
+ "hmac_sha256": "9e7b01fd84d8ba9fb79316cb8d48810e4f7f0f9b56395dfc5fff81d6931e5c17",
+ "key_id": "6b36c01410e73017",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "G-SUITE FAIL: test_safehead_ds.py: rc 1, 'ZZSHDS_PASS' NOT seen",
+  "checks not PASS: ['G-SUITE']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}

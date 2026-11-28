@@ -1,0 +1,117 @@
+{
+ "arm": null,
+ "binding": {
+  "argv_sha256": "f4d46213e343a70b962b9561dd897a715c4849e20e84ddabdbb7cea58a65aa0e",
+  "commit": "98e934e5d33ba676a943ff3c3715fd7009b31575",
+  "profile": "refe_ds_ep_s0",
+  "tree_sha256": "7b90f02d440638ef05f9402a73850ddaf25730ed677a60fda1fa43708b95b516"
+ },
+ "check": "G-SUITE",
+ "details": {
+  "scripts": [
+   {
+    "rc": 0,
+    "script": "test_safehead.py",
+    "seconds": 77.1,
+    "skips": [],
+    "token": "ZZSAFEHEAD_PASS",
+    "token_seen": true
+   },
+   {
+    "rc": 0,
+    "script": "test_launch_gate.py",
+    "seconds": 59.4,
+    "skips": [],
+    "token": "ZZLG_STATIC_PASS",
+    "token_seen": true
+   },
+   {
+    "rc": 0,
+    "script": "test_safehead_next.py",
+    "seconds": 149.6,
+    "skips": [],
+    "token": "ZZSHNEXT_PASS",
+    "token_seen": true
+   },
+   {
+    "rc": 1,
+    "script": "test_safehead_ds.py",
+    "seconds": 75.7,
+    "skips": [],
+    "stderr_tail": [
+     "Traceback (most recent call last):",
+     "  File \"C:\\Users\\Admin\\dsm6\\tip\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\refe\\test_safehead_ds.py\", line 552, in main",
+     "    test_learning_curve(tmp)",
+     "    ~~~~~~~~~~~~~~~~~~~^^^^^",
+     "  File \"C:\\Users\\Admin\\dsm6\\tip\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\refe\\test_safehead_ds.py\", line 329, in test_learning_curve",
+     "    env, tokpath = mint_env(tmp, w, \"ds_ep\", rest, \"lc\")",
+     "                   ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+     "  File \"C:\\Users\\Admin\\dsm6\\tip\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\refe\\test_safehead_ds.py\", line 77, in mint_env",
+     "    assert verdict == \"PASS\", tok[\"reasons\"]",
+     "           ^^^^^^^^^^^^^^^^^",
+     "AssertionError: ['G-HYG REJECTED: binding differs', 'G-DVB REJECTED: binding differs', 'G-LIVE REJECTED: binding differs', 'G-EVAL REJECTED: binding differs', 'G-CKPT REJECTED: binding differs', 'G-SUITE REJECTED: binding differs', 'G-CLOCK REJECTED: the label cache is fixed and sealed by sha256 (--"
+    ],
+    "stdout_tail": [
+     "ok 01 cv5m rule on constructed tables: a +noise step wins the no-margin argmax and cv5m chooses 0; a clear gain is chosen; ties earliest; the largest gain wins; each of NC, DAC, TTC, EP, C alone (CI-hi < 0) blocks a step; a worse-but-not-separated sub-score does not; all-worse -> step 0",
+     "ok 02 CTRL-MARGIN: ds_no_margin turns the +noise fixture's choice 0 -> 100; ds_guard_no_ep turns the EP-only fixture's choice 0 -> 100; neither mutation masks the other; the built rule differs from the registered one",
+     "ok 03 estimator: the CI equals p5c_read.Boot on the RAW per-token values (10,000 draws, seed 20260927, 95 % percentile) to 1e-9 for the gain and a sub-score; safehead_cvm holds no estimator of its own",
+     "ok 04 learning-curve sets: nested, the smallest is EXACTLY the parent's logs, each larger set adds the others in sha256(log name) order, independent of arrival order; out-of-range sizes and unknown parents are refused",
+     "ok 05 CTRL-INDEX: the parent's 12 tokens bit-identical by sha + 12 new rows over 6 logs -> OK; 7 broken indices (a moved sha, a dropped / re-labelled / re-split parent token, no new rows, a log in both halves, a log in two splits) and a duplicate token and a missing sha256 column are each refused",
+     "ok 06 profiles: six NEW names (refe_ds_sh_*, refe_ds_ep_*), 55 in all; the 40 older, the 3 SAFE-HEAD and the 6 L2-NEXT profiles are fingerprint-identical (none moved)",
+     "ok 07 CTRL-SH-UNCHANGED (cv5): EP-HEAD `--select cv5` is bit-identical to the tip trainer: heads, metrics.jsonl, cv_select.json bytes and head meta equal the pinned probe; no cv5m key leaks in",
+     "ok 08 [ds_sh] cv5m (synthetic): per-log table for 9 logs x 3 steps x 6 metrics; its pooled numbers equal the token-level OOF numbers (pdms <= 1e-9, sub-scores <= 1e-4: the parent's float32 means); the choice (40) == the rule recomputed from the table, CIs bit-equal; no-margin argmax 40 reported; eli",
+     "ok 09 [ds_ep] cv5m (synthetic): per-log table for 9 logs x 3 steps x 6 metrics; its pooled numbers equal the token-level OOF numbers (pdms <= 1e-9, sub-scores <= 1e-4: the parent's float32 means); the choice (40) == the rule recomputed from the table, CIs bit-equal; no-margin argmax 40 reported; eli",
+     "ok 10 +noise (trainer, synthetic, labels permuted): cv5 CHOOSES step 15 (the parent rule is fooled); cv5m chooses 0 (point gain +0.455, CI-lo -0.587 <= 0); the same OOF numbers under both; ds_no_margin turns the choice back to 15 (CTRL-MARGIN, trainer-level)",
+     "  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)",
+     "  G-HYG     PASS  ",
+     "  G-DVB     PASS  ",
+     "  G-LIVE    PASS  ",
+     "  G-EVAL    PASS  ",
+     "  G-CKPT    PASS  ",
+     "  G-SUITE   PASS  ",
+     "  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
+     "  [timing] finalize: tree_manifest 0.4s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)",
+     "ZZSHDS_FAIL AssertionError: ['G-HYG REJECTED: binding differs', 'G-DVB REJECTED: binding differs', 'G-LIVE REJECTED: binding differs', 'G-EVAL REJECTED: binding differs', 'G-CKPT REJECTED: binding differs', 'G-SUITE REJECTED: binding differs', 'G-CLOCK REJECTED: the label cache is fixed and sealed b"
+    ],
+    "token": "ZZSHDS_PASS",
+    "token_seen": false
+   }
+  ]
+ },
+ "finished_utc": "2026-11-28T03:46:53Z",
+ "inputs_read": {
+  "--cache-index": {
+   "bytes": 437102,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+   "sha256": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03"
+  },
+  "--heldout-logs": {
+   "bytes": 936,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+   "sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902"
+  },
+  "--init-from": {
+   "bytes": 1288515000,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "F:/safehead_cache/ckpt/C1/model_final.pt",
+   "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+  },
+  "--navtest-logs": {
+   "bytes": 5440,
+   "kind": "file",
+   "method": "sha256-v1",
+   "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+   "sha256": "b52ac6866933b570cd319564232715560860653338f117b0183d645052092cc5"
+  }
+ },
+ "reasons": [
+  "test_safehead_ds.py: rc 1, 'ZZSHDS_PASS' NOT seen"
+ ],
+ "rehearsal": false,
+ "status": "FAIL"
+}

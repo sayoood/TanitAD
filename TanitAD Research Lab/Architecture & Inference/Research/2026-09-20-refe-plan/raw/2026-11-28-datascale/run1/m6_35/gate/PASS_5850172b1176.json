@@ -1,0 +1,124 @@
+{
+ "binding": {
+  "argv": [
+   "--cache-index",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+   "--init-from",
+   "F:/safehead_cache/ckpt/C1/model_final.pt",
+   "--heldout-logs",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+   "--navtest-logs",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+   "--steps",
+   "2000",
+   "--lr",
+   "0.0003",
+   "--batch",
+   "32",
+   "--gamma",
+   "2.0",
+   "--save-steps",
+   "0,250,500,1000,2000",
+   "--rows",
+   "2",
+   "--select",
+   "cv5m",
+   "--out",
+   "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/lc",
+   "--seed",
+   "0"
+  ],
+  "argv_sha256": "f4d46213e343a70b962b9561dd897a715c4849e20e84ddabdbb7cea58a65aa0e",
+  "commit": "5850172b11762b854debcc32455016265647469f",
+  "data": {
+   "--cache-index": {
+    "bytes": 437102,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/index_sealed.csv",
+    "sha256": "f7426318271aebc71e9e256b3dc7f2edfa96dd57d57190342a30679e87434c03"
+   },
+   "--heldout-logs": {
+    "bytes": 936,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/sft_heldout_logs.txt",
+    "sha256": "b814998deeb40a9d7839cce2807f8f282ede76c7f2c5ccce97adc064b27f4902"
+   },
+   "--init-from": {
+    "bytes": 1288515000,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "F:/safehead_cache/ckpt/C1/model_final.pt",
+    "sha256": "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"
+   },
+   "--navtest-logs": {
+    "bytes": 5440,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "E:/Projects/TanitAD-artifacts/datascale/run1/m6_35/navtest_logs.txt",
+    "sha256": "b52ac6866933b570cd319564232715560860653338f117b0183d645052092cc5"
+   }
+  },
+  "data_sha256": "62dbbdb53668d3e56abc3bc6efa6b54cde6e173ae927793081fb94b881b35cf4",
+  "gate_inputs": {},
+  "profile": "refe_ds_ep_s0",
+  "trainer": "refe/safehead_train.py",
+  "tree_sha256": "fcbd5f4c3474f900a77b63ac56ec7322caf118507acce5e6466043efca0cd6a1"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "05538fb4a482b1e5808e2bc09a53f97c12ac712038a80d11bfe73241f6f2ccc9",
+   "finished_utc": "2026-11-28T04:10:56Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "43840edcc148aace40693256077bfa935ebc21f542ef9f5e41cb543c78a19d7a",
+   "finished_utc": "2026-11-28T04:19:14Z",
+   "na_reason": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
+   "reasons": [
+    "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock"
+   ],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "d861b15f0c651ea2d24800d86c4f8cddc5507b7b88c2b599d0b04b5435323b83",
+   "finished_utc": "2026-11-28T04:10:27Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "e151c3017f506a7ef8587dc23dd15eef74f3f593460f566e37deeaf18f4865a1",
+   "finished_utc": "2026-11-28T04:10:34Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "2827240ff05239146092769139dfb0180dc9cb9bb542e7f628828693ebcad6fd",
+   "finished_utc": "2026-11-28T04:10:13Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "bd77664af358a62b761518546f560c5cef971a967cd2fb0a993e9884849aa57d",
+   "finished_utc": "2026-11-28T04:10:34Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "9be4f91545e88cdb44573c659788f36234d3720bc61f37255918a9fd511b1120",
+   "finished_utc": "2026-11-28T04:19:14Z",
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-11-28T04:19:16Z",
+ "gate_sha256": "3a1df19491bc8d0f03d4d509cadd02060985f1795b42bec249c679f07e2e3c22",
+ "hmac_sha256": "caca387dccfa0378ce6b4f94c0508ebe0d9c68890aa4dd3ce5c12d587b074869",
+ "key_id": "6b36c01410e73017",
+ "kind": "launch-gate-token",
+ "reasons": [],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "PASS"
+}
