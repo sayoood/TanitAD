@@ -1,0 +1,248 @@
+{
+ "controls": {
+  "s4": {
+   "pass": true,
+   "checks": [
+    {
+     "name": "line: labels at the first logged steps reaching 30/50/80 m",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> pos 0, lat 0, head 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 1.5 m sideways -> lat 1.5, pos 1.5, along unchanged",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint 4 m along the track -> along +4, lat 0",
+     "ok": true
+    },
+    {
+     "name": "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+     "ok": true
+    },
+    {
+     "name": "circle R=100: label positions equal the analytic ones to the step",
+     "ok": true
+    },
+    {
+     "name": "short track: 30 and 50 valid, 80 invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: known pose and label -> analytic world position and heading",
+     "ok": true
+    },
+    {
+     "name": "join label: validity passes through (third arc invalid), a step outside the clip's label rows reads invalid",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint on its label -> pos 0, head 0, along 0; invalid arc reads NaN",
+     "ok": true
+    },
+    {
+     "name": "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0",
+     "ok": true
+    }
+   ],
+   "all_checks_hold": true,
+   "planted_fault_fails": true,
+   "planted_fault_checks_failed": [
+    "line: labels at the first logged steps reaching 30/50/80 m",
+    "line: checkpoint on the label -> along = label arc minus A (30/50/80 are multiples of the 2 m step: 0)",
+    "circle R=100: label positions equal the analytic ones to the step",
+    "short track: 30 and 50 valid, 80 invalid"
+   ],
+   "planted_fault_2_checks_failed": [
+    "join label: known pose and label -> analytic world position and heading",
+    "join label: checkpoint 4 m farther along the straight track -> along 4, pos 4, lat 0"
+   ]
+  },
+  "s1": {
+   "max_dxy_m": 6.996529623393144e-05,
+   "max_dpsi_rad": 5.101216871139513e-07,
+   "per_file": {
+    "H_RQ50KV1_s0": [
+     6.719544171573943e-05,
+     4.337532359954821e-07
+    ],
+    "H_RQ50KV1_s1": [
+     6.996529623393144e-05,
+     5.101216871139513e-07
+    ],
+    "H_RQ50KV1_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ],
+    "H_RQ50KE1_s0": [
+     6.719544171573943e-05,
+     4.337532359954821e-07
+    ],
+    "H_RQ50KE1_s1": [
+     6.996529623393144e-05,
+     4.0978193283081055e-07
+    ],
+    "H_RQ50KE1_s2": [
+     5.252139482081475e-05,
+     4.6634952610702385e-07
+    ]
+   },
+   "pass": true
+  },
+  "s2": {
+   "max_first_tick_anchor_dist_m": 0.0,
+   "n_rows_anchor_not_t0": 0,
+   "files": [
+    "H_RQ50KV1_s0",
+    "H_RQ50KV1_s1",
+    "H_RQ50KV1_s2",
+    "H_RQ50KE1_s0",
+    "H_RQ50KE1_s1",
+    "H_RQ50KE1_s2"
+   ],
+   "pass": true
+  },
+  "s6": {
+   "per_file": {
+    "H_RQ50KV1_s0": true,
+    "H_RQ50KV1_s1": true,
+    "H_RQ50KV1_s2": true,
+    "H_RQ50KE1_s0": true,
+    "H_RQ50KE1_s1": true,
+    "H_RQ50KE1_s2": true
+   },
+   "pass": true
+  },
+  "s9": {
+   "pass": true,
+   "n_files": 6,
+   "missing": []
+  },
+  "s3": {
+   "pass": true,
+   "computable": true,
+   "windows": 2399,
+   "max_abs_diff_pos_m": 5.161236021899995e-14,
+   "max_abs_diff_head_deg": 2.842170943040401e-14,
+   "same_rows_invalid": true,
+   "n_valid_per_arc": [
+    2322,
+    2319,
+    2294
+   ],
+   "known_value_from": "F:\\TanitAD-scratch\\v8proof\\rhacc10k/tree\\taniteval\\taniteval\\v8f_consistency.py",
+   "note": "Amendment 1 of the card; differences only"
+  },
+  "episode_map": {
+   "all_windows_mapped": true,
+   "n_episodes": 141,
+   "n_windows": 2399
+  },
+  "s5": {
+   "pass": true,
+   "largest_difference": 0.0,
+   "n_comparisons": 12,
+   "note": "first-tick cells equal across the runs of one model that start from the logged state (pre-rolled runs excluded); n_comparisons 0 means no group had two such runs (not judged)"
+  }
+ },
+ "inputs": {
+  "H_RQ50KV1_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KV1_s0\\ticks\\ticks_H_RQ50KV1_s0_m10_causal_heads.npz",
+   "sha256": "c14072321852cff86ee5546b023db7d9934abdb5cd0502e5d05c2e42ed42c75f"
+  },
+  "H_RQ50KV1_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KV1_s1\\ticks\\ticks_H_RQ50KV1_s1_m10_causal_heads.npz",
+   "sha256": "ec7fd9acffa298d2bb79fdc47b5dd731b124ecd4dc2cbb230ad1a8ef14c077da"
+  },
+  "H_RQ50KV1_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KV1_s2\\ticks\\ticks_H_RQ50KV1_s2_m10_causal_heads.npz",
+   "sha256": "6ee3836f1fc2e02f2e953f55ba353ec9373fe7be5d45d119f1e5f9d805e32473"
+  },
+  "H_RQ50KE1_s0": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KE1_s0\\ticks\\ticks_H_RQ50KE1_s0_m10_causal_heads.npz",
+   "sha256": "d57ddf68dd203368bf1b0e0be6469155c258f4e206746ef2c2b31aa2ee0ae1ac"
+  },
+  "H_RQ50KE1_s1": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KE1_s1\\ticks\\ticks_H_RQ50KE1_s1_m10_causal_heads.npz",
+   "sha256": "f05172765fa15dfb919fc6eed1d9c7d929bb779440a04d49882a854be41f3c2f"
+  },
+  "H_RQ50KE1_s2": {
+   "path": "F:/TanitAD-scratch/v8proof/rulefc/hc/pull\\H_RQ50KE1_s2\\ticks\\ticks_H_RQ50KE1_s2_m10_causal_heads.npz",
+   "sha256": "3b885daabb459df2406b8c340fc884c1ba7ae7a3164a4a8b13afd65674a55e77"
+  }
+ },
+ "stage_A_pass": true,
+ "runs": [
+  "H_RQ50KV1",
+  "H_RQ50KE1"
+ ],
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "windows": null,
+ "pairs": {
+  "V1": {
+   "pos_30_50_80m_third_tick": [
+    {
+     "arc_m": 30.0,
+     "mean": -0.0017008132245896525,
+     "lo": -0.018399546556284983,
+     "hi": 0.013487486183609823,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2312,
+      2313,
+      2313
+     ],
+     "per_seed": [
+      -0.004294068980347002,
+      -0.00756709901314187,
+      0.00675760715423969
+     ]
+    },
+    {
+     "arc_m": 50.0,
+     "mean": -0.005490633223558298,
+     "lo": -0.029925040900617695,
+     "hi": 0.01643080792974071,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2299,
+      2299,
+      2299
+     ],
+     "per_seed": [
+      -0.017017817891994455,
+      -0.016157688386299364,
+      0.01670360660761892
+     ]
+    },
+    {
+     "arc_m": 80.0,
+     "mean": -0.006995182756250724,
+     "lo": -0.03885077637052695,
+     "hi": 0.02640499640775858,
+     "verdict": "NOT-SEPARATED",
+     "n_per_seed": [
+      2275,
+      2275,
+      2275
+     ],
+     "per_seed": [
+      -0.035225257448086536,
+      -0.013099656393027917,
+      0.02733936557236227
+     ]
+    }
+   ],
+   "reading": "NOT-SEPARATED"
+  }
+ },
+ "stage_B_pass": true,
+ "ALL_PASS": true
+}
