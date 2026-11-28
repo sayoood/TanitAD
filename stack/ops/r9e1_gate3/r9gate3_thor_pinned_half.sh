@@ -32,13 +32,18 @@ git --git-dir="$GD" cat-file -e "${C40}^{commit}" 2>/dev/null || refuse "$C40 is
 [ -s "$T/stack/scripts/launch_gate.py" ] || refuse "no launch tree under $T"
 # a ~14.1 GB archive: keep 18 GB free before it starts (a full disk would read as test failures)
 FG="$(free_gb "$R")"; [ -n "$FG" ] && [ "$FG" -ge 18 ] || refuse "only ${FG:-?} GB free under $R (floor 18)"
+# Thor's launch venv has NO pytest: the gate's child pytest finds it only through this side folder (the suite runner's own,
+# thor_gate_runner2.py), kept after the archive's tree by launch_gate.pytest_side_entries. MEASURED 2026-11-28: without it every
+# child ended "No module named pytest".
+PYT="${R9_THOR_PYTEST_PATH:-/home/nvidia/refcv8_audit/pyt}"
+[ -f "$PYT/pytest/__init__.py" ] || refuse "no pytest under $PYT (R9_THOR_PYTEST_PATH): every pinned child would end 'No module named pytest'"
 # a re-run keeps the previous evidence (a FAIL is a record) and removes the previous archive (re-creatable from git)
 [ -d "$OUT" ] && mv "$OUT" "$OUT.prev_$(date -u +%Y%m%dT%H%M%S)"
 [ -d "$SW" ] && { SZ="$(du -sm "$SW" 2>/dev/null | cut -f1)"; rm -rf "${SW:?}"; say "deleted stale archive $SW (${SZ:-?} MB; re-creatable from git)"; }
 mkdir -p "$SW"
 say "launch_gate run --pinned-half thor (profile refcv9-full-d1, commit $C12, argv $ARGV)"
 t0=$(date +%s)
-PYTHONDONTWRITEBYTECODE=1 timeout "${R9_PINNED_TIMEOUT_S:-14400}" "$PY" "$T/stack/scripts/launch_gate.py" run \
+PYTHONPATH="$PYT" PYTHONDONTWRITEBYTECODE=1 timeout "${R9_PINNED_TIMEOUT_S:-14400}" "$PY" "$T/stack/scripts/launch_gate.py" run \
   --profile refcv9-full-d1 --stage devbox --tree "$T" --commit "$C40" --git-dir "$GD" --argv-file "$ARGV" \
   --suite-work "$SW" --out-dir "$OUT" --cpu-only --pinned-half thor > "$W/gate.log" 2>&1 < /dev/null
 EV="$OUT/evidence/G-SUITE-PINNED-THOR-HALF.json"

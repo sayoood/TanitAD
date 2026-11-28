@@ -8930,6 +8930,52 @@ def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tupl
 # --------------------------------------------------------------------------------------------- #
 # the jobs (child side)                                                                           #
 # --------------------------------------------------------------------------------------------- #
+#: refcv9 D1 (MM 4a3d05, 2026-11-28): the build-only model checks (G-HYG / G-DVB / G-EVAL, `job_model`) of the D1 decay
+#: branch READ the branch source at trainer startup -- `lr_schedule.branch_preflight` refuses a missing checkpoint and reads
+#: the source run's argv from the `config.json` beside it, before anything is built -- so for that profile the
+#: `--wsd-branch-from` path is a DECLARED build input, kept real instead of pointed at the `__gate_unread__` sentinel.
+#: MEASURED 2026-11-28 03:07Z: the first D1 explore gate (c0957d36) FAILED G-HYG / G-DVB / G-EVAL in 2 s each on
+#: "[v3] --wsd-branch-from .../scratch/__gate_unread__/wsd-branch-from: no such file" (G-LIVE / G-CKPT / G-CLOCK PASSED).
+#: Module-level, outside every PROFILES dict: no profile fingerprint moves. Every other unkept path stays a sentinel.
+BUILD_INPUT_EXTRA: dict[str, tuple[str, ...]] = {"refcv9-full-d1": ("--wsd-branch-from",)}
+
+
+def model_build_input_flags(prof: dict) -> tuple[str, ...]:
+    """The flags whose paths the model build may READ: the profile's `model_input_flags` plus its module-level
+    `BUILD_INPUT_EXTRA` (refcv9-full-d1: the branch source). Used by `job_model` for the sentinel argv and the
+    G-EVAL / G-DVB `inputs_read` fingerprints, so a kept path is always also a fingerprinted one."""
+    return tuple(prof["model_input_flags"]) + tuple(BUILD_INPUT_EXTRA.get(str(prof.get("name", "")), ()))
+
+
+def branch_source_sentinel_patch(ctx: Ctx, pat: "_Patcher", T: Any, keep: Iterable[str], scratch: Path) -> dict | None:
+    """refcv9 D1 (MM 4a3d05, 2026-11-28), `job_model` only. The trainer's `lr_schedule.branch_preflight` compares THIS argv
+    -- here the SENTINEL argv -- with the source run's `config.json` argv (`argv_differences`), so every sentinelled path
+    flag differed (MEASURED 2026-11-28 on Thor, once the branch source was kept real: "--agent-join: branch
+    '<sentinel>' vs source '<real path>'"). Patched for this job: `read_source_namespace` still does the REAL read (its
+    refusals stay), then re-parses the source argv after the SAME `_sentinel_argv` mapping, so every NON-path key must
+    still match exactly. Path VALUES are not compared here; they are compared on the real paths by G-LIVE (the trainer's
+    own preflight on the real argv) and by `wsd_branch_reasons` (the D1-BRANCH rule) in `finalize`. None = no branch flag."""
+    if not has_flag(ctx.argv, "--wsd-branch-from"):
+        return None
+    lrs = getattr(T, "_lrs", None)
+    if lrs is None or not callable(getattr(lrs, "read_source_namespace", None)) or not callable(getattr(lrs, "_argv_of", None)):
+        return {"patched": False, "why": "the trainer exposes no _lrs.read_source_namespace / _argv_of"}
+    orig, argv_of, keep = lrs.read_source_namespace, lrs._argv_of, tuple(keep)
+    seen: dict[str, Any] = {"patched": True}
+
+    def read(config_path, parser):
+        _ns, cfg = orig(config_path, parser)
+        src = [str(x) for x in argv_of(cfg)]
+        mapped, rec = _sentinel_argv(argparse.Namespace(argv=src, path_map=ctx.path_map, prof=ctx.prof), keep, scratch)
+        seen.update(config=str(config_path), n_source_args=len(src), sentinel=sorted(rec["sentinel"]))
+        try:
+            return parser.parse_args(mapped), cfg
+        except SystemExit:
+            raise SystemExit(f"[gate] the source argv in {config_path} does not parse once sentinel-mapped") from None
+    pat.set(lrs, "read_source_namespace", read)
+    return seen
+
+
 def _sentinel_argv(ctx: Ctx, keep_flags: Iterable[str], scratch: Path) -> tuple[list[str], dict]:
     """The launch argv on THIS host: `keep_flags` mapped to their local copies, every OTHER data
     path pointed at a NON-EXISTENT sentinel (a build that reads it must fail, not pass)."""
@@ -8995,7 +9041,7 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     scratch = out_dir / "scratch"
     scratch.mkdir(parents=True, exist_ok=True)
     evs = {c: new_evidence(ctx, c) for c in checks}
-    argv, arec = _sentinel_argv(ctx, ctx.prof["model_input_flags"], scratch)
+    argv, arec = _sentinel_argv(ctx, model_build_input_flags(ctx.prof), scratch)
     parser = T.build_parser()
     pat = _Patcher()
     _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms act at the BUILD (zeroed / unfrozen / ...)
@@ -9024,6 +9070,11 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                     c.core.encoder = dataclasses.replace(enc, **{fl[0]: 0})
             return c
         pat.set(T, "_pin_trainer_cfg", pin_arm)
+    # refcv9 D1: the trainer's branch preflight compares the (sentinel) argv with the source run's argv: map that one the
+    # same way first (`branch_source_sentinel_patch`; non-path keys must still match exactly)
+    _branch_rec = branch_source_sentinel_patch(ctx, pat, T, model_build_input_flags(ctx.prof), scratch)
+    if _branch_rec is not None:
+        arec["branch_source"] = _branch_rec
     # ⛔ profile-forbidden levers (refcv7: DrivoR-T's) are read off the ARGV first, so they are
     # reported even when the trainer refuses the argv before a model exists
     forb_reasons, forb_det = forbidden_lever_reasons(ctx.prof, ctx.argv)
@@ -9090,7 +9141,7 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     if "G-EVAL" in evs:
         ev = evs["G-EVAL"]
         ev["details"].update(common)
-        ev["inputs_read"] = _inputs_read(ctx, ctx.prof["model_input_flags"])
+        ev["inputs_read"] = _inputs_read(ctx, model_build_input_flags(ctx.prof))
         # ⛔ IDENTICAL SETTINGS ON BOTH SIDES. The loader's model is in its eval-time state
         # (requires_grad False on every parameter); the trainer's keeps its training flags.
         # MEASURED 2026-09-27 on Thor (14907a0): with the flags left as trained, 74 of 188 outputs
@@ -9124,7 +9175,7 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     if "G-DVB" in evs:
         ev = evs["G-DVB"]
         ev["details"].update(common)
-        ev["inputs_read"] = _inputs_read(ctx, ctx.prof["model_input_flags"])
+        ev["inputs_read"] = _inputs_read(ctx, model_build_input_flags(ctx.prof))
         for k, fp in implicit_inputs(ctx.argv):          # the ImageNet init the build loaded
             ev["inputs_read"][k] = fp
         if ctx.options.get("nav_tau_record"):
@@ -10492,6 +10543,24 @@ def safe_dir_env(env: dict, dest: Path) -> dict:
     return env
 
 
+def pytest_side_entries(pythonpath: str) -> list[str]:
+    """refcv9 D1 (MM 4a3d05, 2026-11-28): the CALLER's PYTHONPATH entries that hold the test runner itself
+    (`pytest/__init__.py`) and no tree (`tanitad` / `taniteval`); `pinned_env` keeps them AFTER the archive's tree.
+    Thor's launch venv has NO pytest: it lives in a --no-deps side folder (/home/nvidia/refcv8_audit/pyt) that the suite
+    runner (thor_gate_runner2.py) puts on PYTHONPATH, and `pinned_env` used to REPLACE PYTHONPATH. MEASURED 2026-11-28 on
+    Thor: every child pytest the pinned check started ended "No module named pytest" (9 test_launch_gate_pinned_split
+    ids under the runner's environment; a real Thor half would have lost every pinned file the same way). A tree dir is
+    never kept, so the archive's tree stays the only tanitad; on the dev box no entry holds pytest and nothing changes."""
+    out: list[str] = []
+    for e in (pythonpath or "").split(os.pathsep):
+        if not e or e in out or not (Path(e) / "pytest" / "__init__.py").is_file():
+            continue
+        if (Path(e) / "tanitad").exists() or (Path(e) / "taniteval").exists():
+            continue
+        out.append(e)
+    return out
+
+
 def pinned_env(dest: Path, o: dict, base: dict) -> dict:
     """The pinned files' test environment: the archive's tree first on PYTHONPATH, NO git
     redirection (`_GIT_ENV`: a test's `git` must never reach tanitad-push's shared index), NO
@@ -10499,7 +10568,8 @@ def pinned_env(dest: Path, o: dict, base: dict) -> dict:
     setdefault, and an MKL value overrides torch's count (MEASURED 2026-09-27: "the fixed order
     must yield 6 threads, got 4") -- and no regression-arm switch."""
     env = {k: v for k, v in base.items() if k not in _GIT_ENV and k != "MKL_NUM_THREADS"}
-    env["PYTHONPATH"] = os.pathsep.join([str(dest / "stack"), str(dest / "taniteval")])
+    env["PYTHONPATH"] = os.pathsep.join([str(dest / "stack"), str(dest / "taniteval")]
+                                        + pytest_side_entries(str(base.get("PYTHONPATH", ""))))
     env.update(PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1",
                OMP_NUM_THREADS=str(o.get("omp", 4)),
                # the full tracked-tree credential scan RUNS here (it skips on ci_gate's 15 s budget)
