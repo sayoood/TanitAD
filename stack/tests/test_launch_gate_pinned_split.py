@@ -608,7 +608,7 @@ def test_ops_scripts_parse_and_carry_their_markers(name, markers):
     bash = shutil.which("bash")
     if bash is None:
         pytest.skip("bash is not on PATH")
-    r = subprocess.run([bash, "-n", str(p)], capture_output=True, text=True)
+    r = subprocess.run([bash, "-n", str(p)], capture_output=True, text=True, encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stderr
     for m in markers:
         assert m in txt, m

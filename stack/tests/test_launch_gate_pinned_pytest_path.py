@@ -105,5 +105,6 @@ def test_the_Thor_half_script_passes_the_side_folder_and_refuses_before_any_work
     bash = shutil.which("bash")
     if bash is None:
         pytest.skip("bash is not on PATH")
-    r = subprocess.run([bash, "-n", str(OPS / "r9gate3_thor_pinned_half.sh")], capture_output=True, text=True)
+    r = subprocess.run([bash, "-n", str(OPS / "r9gate3_thor_pinned_half.sh")], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
     assert r.returncode == 0, r.stderr
