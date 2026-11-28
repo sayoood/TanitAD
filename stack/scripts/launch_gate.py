@@ -10292,6 +10292,40 @@ def job_suite(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
 # --------------------------------------------------------------------------------------------- #
 SUITE_BIND_SCHEMA = "tanitad.launch_gate.suite_bound/1"
 _ARCHIVE_DONE = ".gate_archive_complete.json"
+#: G-SUITE-PINNED SPLIT MODE (PI ruling 2026-11-28, chat, verbatim choice "Split: Thor + dev box"): Thor runs every pinned test on the
+#: FULL tip archive; the dev box re-runs only the test files Thor cannot pass, on a REDUCED tree; every test must pass on ONE host at the
+#: tip; the bar is unchanged. ⛔ The allow-list lives HERE, at module level, and NEVER inside a `PROFILES[...]` dict: profile dicts are
+#: fingerprinted by value (`sha256(repr(sorted(PROFILES[n].items())))[:16]`) and those fingerprints are pinned in tests and bound to
+#: launch-gate records -- a moved fingerprint would void them.
+PINNED_SPLIT_PROFILES = frozenset({"refcv9-full-d1"})
+PINNED_HALVES = ("thor", "devbox-complement")
+#: the Thor half's evidence is written under THIS check key, so it can never be mistaken for G-SUITE-PINNED (it is not in CHECKS, so
+#: `_collect_evidence` never reads it either)
+PINNED_THOR_HALF_CHECK = "G-SUITE-PINNED-THOR-HALF"
+PINNED_THOR_HALF_OK = "HALF-COMPLETE"            # a status that is not PASS on purpose
+#: members of these top-level directories are dropped from the dev-box complement's archive when >= --pinned-reduce-bytes
+PINNED_REDUCE_ROOTS = ("TanitAD Research Lab/", "FlyWheels/")
+PINNED_REDUCE_BYTES_DEFAULT = 1_000_000
+
+
+def pinned_split_refusals(profile: str, half: str | None, thor_half: str | None, reduce_bytes: int | None,
+                          git_dir: str | None) -> None:
+    """Raise GateError for any split-mode option on a profile outside `PINNED_SPLIT_PROFILES`, or an inconsistent
+    option set. A no-op when no split option is given (the ordinary path is untouched)."""
+    default = reduce_bytes in (None, PINNED_REDUCE_BYTES_DEFAULT)
+    if not half and not thor_half and default:
+        return
+    if profile not in PINNED_SPLIT_PROFILES:
+        raise GateError(f"G-SUITE-PINNED split mode (--pinned-half / --pinned-thor-half / --pinned-reduce-bytes) is "
+                        f"REFUSED for profile {profile!r}: PI ruling 2026-11-28 admits {sorted(PINNED_SPLIT_PROFILES)} only")
+    if not half:
+        raise GateError("--pinned-thor-half / --pinned-reduce-bytes need --pinned-half")
+    if half == "devbox-complement" and not thor_half:
+        raise GateError("--pinned-half devbox-complement needs --pinned-thor-half <G-SUITE-PINNED-THOR-HALF.json>")
+    if half == "thor" and (thor_half or not default):
+        raise GateError("--pinned-half thor takes neither --pinned-thor-half nor --pinned-reduce-bytes (it runs the FULL archive)")
+    if not git_dir:
+        raise GateError("--pinned-half needs --git-dir (the commit is archived from git, never a worktree)")
 
 
 def env_failure_pin(prof: dict, tree: str | os.PathLike) -> tuple[dict | None, str | None]:
@@ -10514,10 +10548,14 @@ def throwaway_repo(dest: Path, git_dir: str, commit: str) -> dict:
             "errors": [p.stderr.strip()[-300:] for p in steps if p.returncode != 0]}
 
 
-def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
+def stream_archive(git_dir: str, commit: str, dest: Path,
+                   drop: Callable[[str, int], bool] | None = None) -> dict:
     """`git -c core.autocrlf=false archive <commit>` of the WHOLE commit, STREAMED member by
     member into `dest` (never held in memory: the full tree is ~6.6 GB). A `.gate_archive_complete`
-    marker is written LAST; a directory without it is a partial extraction and is refused."""
+    marker is written LAST; a directory without it is a partial extraction and is refused.
+    `drop(name, size) -> True` (split mode's dev-box complement ONLY, `pinned_reduce_drop`) leaves that file
+    out of the extraction and lists it, with its size, under the record's `dropped`; None (every other
+    caller) keeps every member and adds no key."""
     dest.mkdir(parents=True, exist_ok=False)
     env = dict(os.environ, GIT_DIR=str(git_dir))
     p = subprocess.Popen(["git", "-c", "core.autocrlf=false", "archive", "--format=tar", commit],
@@ -10533,6 +10571,7 @@ def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
     err_thread.start()
     n = nbytes = 0
     skipped = []
+    dropped: list[list] = []
     with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
         for m in tf:
             if m.name.startswith(("/", "..")) or ".." in Path(m.name).parts:
@@ -10543,6 +10582,9 @@ def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
                 continue
             if not m.isfile():
                 skipped.append(m.name)
+                continue
+            if drop is not None and drop(m.name, int(m.size)):
+                dropped.append([m.name, int(m.size)])
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
             src = tf.extractfile(m)
@@ -10567,6 +10609,9 @@ def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
         raise GateError(f"git archive {commit[:12]} failed rc={rc}: {err[-400:]}")
     rec = {"commit": commit, "files": n, "bytes": nbytes, "skipped_non_files": skipped[:20],
            "trailing_pad_bytes": pad, "written_utc": utc_now()}
+    if drop is not None:
+        rec.update(reduced=True, dropped=dropped, dropped_files=len(dropped),
+                   dropped_bytes=sum(d[1] for d in dropped))
     write_json(dest / _ARCHIVE_DONE, rec)
     return rec
 
@@ -10616,6 +10661,8 @@ def job_suite_pinned(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     FULL launch commit (Research Lab files included, the HF cache present), run exactly the test
     FILES of the pinned Thor environment list -- where test_refcv6_trunk actually RUNS -- and
     every guard's mutation arm (SPEC 2)."""
+    if ctx.options.get("pinned_half"):        # split mode (PI 2026-11-28): refcv9-full-d1 only; the code is below
+        return job_suite_pinned_split(ctx)
     ev = new_evidence(ctx, "G-SUITE-PINNED")
     o = ctx.options
     reasons: list[str] = []
@@ -10728,6 +10775,430 @@ def job_suite_pinned(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     ev["details"].update(det)
     finish_evidence(ev, "FAIL" if reasons else "PASS", reasons)
     return {"G-SUITE-PINNED": ev}
+
+
+# --------------------------------------------------------------------------------------------- #
+# G-SUITE-PINNED SPLIT MODE (PI ruling 2026-11-28, chat, verbatim choice "Split: Thor + dev box") #
+# Two halves of ONE check at ONE commit, profile refcv9-full-d1 ONLY (`PINNED_SPLIT_PROFILES`):    #
+#   thor              every pinned file on the FULL archive; per-test outcomes; evidence written    #
+#                     under G-SUITE-PINNED-THOR-HALF (never G-SUITE-PINNED)                         #
+#   devbox-complement validates the Thor half (same commit / tree / argv / profile, full archive,    #
+#                     a junit for every pinned file), archives the SAME commit REDUCED, re-runs      #
+#                     ONLY the files holding a test Thor did not pass, then MERGES: PASS iff every   #
+#                     test id passes (or skips for a REGISTERED reason) on at least ONE host.        #
+# The bar is unchanged: a test that is not a pass on either host is a FAIL naming both reasons.      #
+# --------------------------------------------------------------------------------------------- #
+def _outcome_rank(o: str) -> int:
+    return 0 if o == "pass" else 1 if o.startswith("skip:") else 2 if o == "error" else 3
+
+
+def _parse_junit_outcomes(xml_path: Path) -> dict[str, str]:
+    """{test id: "pass" | "fail" | "error" | "skip:<reason>"} from a junit file (the worst outcome wins
+    when an id appears twice, e.g. a failing call and an erroring teardown)."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(xml_path).getroot()
+    out: dict[str, str] = {}
+    for tc in root.iter("testcase"):
+        tid = f"{tc.get('classname', '')}::{tc.get('name', '')}"
+        tags = [ch.tag for ch in tc]
+        if "failure" in tags:
+            o = "fail"
+        elif "error" in tags:
+            o = "error"
+        elif "skipped" in tags:
+            sk = next(ch for ch in tc if ch.tag == "skipped")
+            o = "skip:" + (sk.get("message") or sk.text or "").strip()[:400]
+        else:
+            o = "pass"
+        if tid not in out or _outcome_rank(o) > _outcome_rank(out[tid]):
+            out[tid] = o
+    return out
+
+
+def _pinned_skip_pats(skip_ok: Iterable[str]) -> list:
+    """The registry as (test-id regex, reason regex) pairs -- the same reading `judge_pinned_run` uses."""
+    return [(re.compile(x[0]), re.compile(x[1], re.I)) if isinstance(x, (tuple, list))
+            else (re.compile(r".*"), re.compile(x, re.I)) for x in skip_ok]
+
+
+def _pinned_ok(tid: str, outcome: str | None, pats: list) -> bool:
+    """One host's verdict on one test: a PASS, or a SKIP for a REGISTERED reason. Anything else -- fail, error,
+    an unregistered skip, or not run at all -- is not."""
+    if outcome == "pass":
+        return True
+    if isinstance(outcome, str) and outcome.startswith("skip:"):
+        why = outcome[5:]
+        return any(ip.fullmatch(tid) and rp.search(why) for ip, rp in pats)
+    return False
+
+
+def _pinned_kind(outcome: str | None) -> str:
+    if outcome is None:
+        return "not run"
+    if outcome.startswith("skip:"):
+        return f"unregistered skip ({outcome[5:][:80]})"
+    return outcome
+
+
+def pinned_reduce_drop(name: str, size: int, reduce_bytes: int) -> bool:
+    """The dev-box complement's reduced tree: everything under stack/ taniteval/ tools/ `Project Steering/` and every
+    top-level file is KEPT; a member under `TanitAD Research Lab/` or `FlyWheels/` is dropped when it is
+    >= `reduce_bytes`."""
+    return name.startswith(PINNED_REDUCE_ROOTS) and int(size) >= int(reduce_bytes)
+
+
+def pinned_complement_files(files: list[dict], thor_files: dict, skip_ok: Iterable[str]) -> list[dict]:
+    """The pinned files holding a Thor-half test that is not a pass (fail / error / unregistered skip). A file
+    with no junit or no tests on Thor is a STRUCTURAL failure of the Thor half and is never rescued here."""
+    pats = _pinned_skip_pats(skip_ok)
+    out = []
+    for f in files:
+        r = thor_files.get(f"{f['sub']}/{f['file']}") or {}
+        oc = r.get("outcomes")
+        if isinstance(oc, dict) and r.get("n_tests") and any(
+                not _pinned_ok(t, o, pats) for t, o in oc.items()):
+            out.append(f)
+    return out
+
+
+def merge_pinned_split(files: list[dict], thor_files: dict, dev_files: dict, complement_keys: Iterable[str],
+                       skip_ok: Iterable[str], flaky_ok: Iterable[str] = ()) -> tuple[list[str], dict]:
+    """The merge. PASS iff every test id is a pass (or a registered skip) on at least ONE host, every pinned file
+    produced a junit with tests on Thor, and every complement file produced one on the dev box. A test that is
+    not ok on EITHER host is a FAIL naming both reasons; one that passed on Thor and failed on the dev box is
+    counted and listed but does not fail the check. The FLAKY rule (`flaky_admitted`) applies unchanged."""
+    pats = _pinned_skip_pats(skip_ok)
+    fl = set(flaky_ok)
+    reasons: list[str] = []
+    both_bad: list[tuple[str, str, str]] = []
+    thor_pass_dev_fail: list[str] = []
+    flaky_failing: list[str] = []
+    n_ids = n_thor = n_dev_only = n_both = 0
+    comp = set(complement_keys)
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        t = thor_files.get(key) or {}
+        toc = t.get("outcomes")
+        if not isinstance(toc, dict):
+            reasons.append(f"G-SUITE-PINNED: {key} produced no junit on Thor (rc {t.get('rc')}): "
+                           f"{str(t.get('tail'))[-200:]}")
+            continue
+        if not t.get("n_tests"):
+            reasons.append(f"G-SUITE-PINNED: {key} collected ZERO tests on Thor")
+        d = dev_files.get(key) if key in comp else None
+        doc = d.get("outcomes") if isinstance(d, dict) else None
+        if key in comp and not isinstance(doc, dict):
+            reasons.append(f"G-SUITE-PINNED: {key} produced no junit on the dev box (rc "
+                           f"{(d or {}).get('rc')}): {str((d or {}).get('tail'))[-200:]}")
+            continue
+        doc = doc or {}
+        for tid in sorted(set(toc) | set(doc)):
+            n_ids += 1
+            ot, od = toc.get(tid), doc.get(tid)
+            okt, okd = _pinned_ok(tid, ot, pats), _pinned_ok(tid, od, pats)
+            if okt and okd:
+                n_both += 1
+            elif okt:
+                n_thor += 1
+                if od is not None:
+                    thor_pass_dev_fail.append(tid)
+            elif okd:
+                n_dev_only += 1
+            elif tid in fl and all(o in (None, "fail", "error") for o in (ot, od)):
+                flaky_failing.append(tid)
+            else:
+                both_bad.append((tid, _pinned_kind(ot), _pinned_kind(od)))
+    if both_bad:
+        first = both_bad[0]
+        reasons.append(f"G-SUITE-PINNED: {len(both_bad)} test(s) are not a PASS (nor a registered skip) on EITHER "
+                       f"host, e.g. {first[0]} [Thor: {first[1]} | dev box: {first[2]}]; first ids: "
+                       f"{[b[0] for b in both_bad[:6]]}")
+    det = {"n_ids": n_ids, "n_ok_both": n_both, "n_ok_thor_only": n_thor, "n_ok_devbox_only": n_dev_only,
+           "n_fail_both": len(both_bad), "fail_both": [list(b) for b in both_bad[:60]],
+           "n_passed_thor_failed_devbox": len(thor_pass_dev_fail),
+           "passed_thor_failed_devbox": sorted(thor_pass_dev_fail)[:200],
+           "flaky_failing": sorted(flaky_failing)}
+    return reasons, det
+
+
+def check_pinned_thor_half(ev: Any, ctx: Ctx, pin: dict, files: list[dict]) -> list[str]:
+    """Why the dev-box complement REFUSES this Thor-half evidence (empty = usable): another check / commit / tree /
+    argv / profile, not on the FULL archive, a pinned file with no junit, or per-test outcomes that do not hash to
+    what the Thor half recorded."""
+    if not isinstance(ev, dict):
+        return ["the Thor-half evidence is not a JSON object"]
+    why: list[str] = []
+    d = ev.get("details") if isinstance(ev.get("details"), dict) else {}
+    if ev.get("check") != PINNED_THOR_HALF_CHECK or d.get("half") != "thor":
+        why.append(f"not a Thor-half evidence (check {ev.get('check')!r}, half {d.get('half')!r})")
+    if ev.get("arm"):
+        why.append(f"a regression arm ({ev['arm']}) is active in the Thor half")
+    if ev.get("status") != PINNED_THOR_HALF_OK:
+        why.append(f"the Thor half is {ev.get('status')!r}, not {PINNED_THOR_HALF_OK!r}: "
+                   f"{'; '.join(map(str, (ev.get('reasons') or [])[:3]))[:300]}")
+    mine = ctx.binding()
+    theirs = ev.get("binding") if isinstance(ev.get("binding"), dict) else {}
+    for k in ("profile", "commit", "tree_sha256", "argv_sha256"):
+        if theirs.get(k) != mine[k]:
+            why.append(f"binding {k} differs: Thor half {str(theirs.get(k))[:16]}, this run {str(mine[k])[:16]}")
+    arc = d.get("archive") if isinstance(d.get("archive"), dict) else {}
+    if arc.get("reduced") or arc.get("dropped") or arc.get("commit") != mine["commit"]:
+        why.append("the Thor half did not run on the FULL archive of this commit")
+    if d.get("pin") != list(ctx.prof.get("suite_env_failures") or []):
+        why.append(f"the Thor half ran another env-failure pin ({d.get('pin')!r})")
+    tf = d.get("files") if isinstance(d.get("files"), dict) else {}
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        if not isinstance((tf.get(key) or {}).get("outcomes"), dict):
+            why.append(f"{key} has no junit in the Thor half")
+    outs = {k: (v or {}).get("outcomes") for k, v in sorted(tf.items())}
+    if sha256_bytes(canonical_json(scrub(outs))) != d.get("outcomes_sha256"):
+        why.append("the Thor half's per-test outcomes do not hash to its recorded outcomes_sha256 (edited?)")
+    return why
+
+
+def _mark_skip_worktree(dest: Path, paths: list[str]) -> dict:
+    """The dropped members stay in the throwaway repo's index (it is `read-tree HEAD`); mark them skip-worktree so a
+    test that asks git for the working-tree state does not read 2,400 deletions."""
+    if not paths:
+        return {"n": 0, "rc": 0}
+    env = {k: v for k, v in os.environ.items() if k not in _GIT_ENV}
+    env = safe_dir_env(env, dest)
+    p = subprocess.run(["git", "-C", str(dest), "update-index", "--skip-worktree", "-z", "--stdin"], env=env,
+                       input=("\0".join(paths) + "\0").encode("utf-8"), capture_output=True)
+    return {"n": len(paths), "rc": p.returncode, "err": p.stderr.decode("utf-8", "replace")[-200:]}
+
+
+def _pinned_run_audit(dest: Path, logs: Path, env: dict, o: dict) -> dict:
+    """Every guard's mutation arm must be CAUGHT (SPEC 2) -- the same run `job_suite_pinned` makes, as a record."""
+    audit = dest / "stack" / "scripts" / "guard_mutation_audit.py"
+    if o.get("skip_mutation_audit"):
+        return {"ok": False, "why": "the guard mutation audit was skipped (--skip-mutation-audit): not a PASS"}
+    if not audit.is_file():
+        return {"ok": False, "why": "stack/scripts/guard_mutation_audit.py is absent from the launch commit"}
+    log = logs / "guard_mutation_audit.log"
+    try:
+        with open(log, "w", encoding="utf-8", errors="replace") as fh:
+            p = subprocess.run([sys.executable, str(audit)], cwd=str(dest / "stack"), env=env, stdout=fh,
+                               stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, timeout=3600)
+        arc = p.returncode
+    except subprocess.TimeoutExpired:
+        arc = "timeout"
+    txt = log.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"=== (\d+)/(\d+) defects CAUGHT", txt)
+    ok = bool(m) and arc == 0 and int(m.group(1)) == int(m.group(2)) and int(m.group(2)) >= 1
+    return {"ok": ok, "rc": arc, "summary": m.group(0) if m else None, "log": str(log),
+            "verdicts": re.findall(r"^(CAUGHT|ESCAPED|MISCREDITED)\s+(\S+)", txt, flags=re.M),
+            "why": None if ok else f"guard mutation audit: {m.group(0) if m else 'no summary line'} (rc {arc})"}
+
+
+def _pinned_run_files(files: list[dict], dest: Path, env: dict, logs: Path, tag: str) -> dict[str, dict]:
+    """Run each pinned file in its own pytest and keep every test's outcome (not only the failures)."""
+    results: dict[str, dict] = {}
+    for f in files:
+        key = f"{f['sub']}/{f['file']}"
+        xml = logs / (key.replace("/", "__") + ".xml")
+        log = logs / (key.replace("/", "__") + ".log")
+        xml.unlink(missing_ok=True)
+        t0 = time.time()
+        try:
+            with open(log, "w", encoding="utf-8", errors="replace") as fh:
+                p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                    "-rfEs", f"--junitxml={xml}", "-o", "junit_family=xunit2", f["file"]],
+                                   cwd=str(dest / f["sub"]), env=env, stdout=fh, stderr=subprocess.STDOUT,
+                                   stdin=subprocess.DEVNULL, timeout=1800)
+            rc = p.returncode
+        except subprocess.TimeoutExpired:
+            rc = "timeout"
+        tail = ([ln for ln in log.read_text(encoding="utf-8", errors="replace").splitlines()
+                 if ln.strip()] or ["<none>"])[-1]
+        r: dict[str, Any] = {"rc": rc, "tail": tail[-300:], "elapsed_s": round(time.time() - t0, 1)}
+        if xml.is_file():
+            try:
+                oc = _parse_junit_outcomes(xml)
+                r.update(outcomes=oc, n_tests=len(oc),
+                         failed=sorted(t for t, o in oc.items() if o in ("fail", "error")),
+                         n_skipped=sum(1 for o in oc.values() if o.startswith("skip:")))
+            except Exception as e:                                    # noqa: BLE001 -- a torn junit is no junit
+                r["tail"] = f"unreadable junit: {type(e).__name__}: {e}"[:300]
+        results[key] = r
+        _say(f"G-SUITE-PINNED[{tag}] {key}: rc {rc}, {r.get('n_tests')} tests, "
+             f"{len(r.get('failed') or [])} failed, {r.get('n_skipped')} skipped")
+    return results
+
+
+def _pinned_split_archive(ctx: Ctx, pin: dict, det: dict, commit: str, reduced: bool) -> tuple[Path | None, list[str]]:
+    """Archive (FULL for the Thor half, REDUCED for the complement), the throwaway repo, and the stack/+taniteval/ tree
+    digest. -> (dest, structural reasons); dest None = the run cannot continue."""
+    o = ctx.options
+    git_dir = o["git_dir"]
+    work = Path(o.get("suite_work") or (Path(ctx.out_dir) / "suite"))
+    work.mkdir(parents=True, exist_ok=True)
+    dest = work / (f"p{commit[:10]}" if reduced else f"f{commit[:10]}")
+    thr = int(o.get("pinned_reduce_bytes") or PINNED_REDUCE_BYTES_DEFAULT)
+    if dest.exists() and not (dest / _ARCHIVE_DONE).is_file():
+        return None, [f"G-SUITE-PINNED: {dest} exists WITHOUT its completion marker -- a partial extraction; "
+                      f"remove it (by hand) and re-run"]
+    if not dest.exists():
+        _say(f"G-SUITE-PINNED: archiving commit {commit[:12]} ({'REDUCED, >= ' + str(thr) + ' B dropped' if reduced else 'FULL'}) -> {dest}")
+        drop = (lambda n, s: pinned_reduce_drop(n, s, thr)) if reduced else None
+        arc = stream_archive(git_dir, commit, dest, drop=drop)
+        if reduced:
+            arc["reduce_bytes"] = thr
+            write_json(dest / _ARCHIVE_DONE, arc)
+    else:
+        arc = read_json(dest / _ARCHIVE_DONE)
+    if arc.get("commit") != commit or bool(arc.get("reduced")) != reduced or (
+            reduced and arc.get("reduce_bytes") != thr):
+        return None, [f"G-SUITE-PINNED: {dest} holds another archive (commit {str(arc.get('commit'))[:12]}, "
+                      f"reduced {arc.get('reduced')}, threshold {arc.get('reduce_bytes')})"]
+    det["archive"] = arc
+    det["throwaway_repo"] = throwaway_repo(dest, git_dir, commit)
+    if det["throwaway_repo"].get("head") != commit:
+        _say(f"G-SUITE-PINNED: throwaway repo git errors: {det['throwaway_repo'].get('errors')}")
+        return None, [f"G-SUITE-PINNED: the throwaway repo's HEAD is {det['throwaway_repo'].get('head')!r}, "
+                      f"not {commit}"]
+    if reduced:
+        det["skip_worktree"] = _mark_skip_worktree(dest, [d[0] for d in arc.get("dropped") or []])
+    reasons: list[str] = []
+    fsha = tree_digest(tree_manifest(dest))
+    det["full_tree_stack_taniteval_sha256"] = fsha
+    if fsha != ctx.tree_sha256:
+        reasons.append(f"G-SUITE-PINNED: the {'reduced' if reduced else 'full'} archive's stack/+taniteval/ "
+                       f"({fsha[:16]}) is not the launched tree ({ctx.tree_sha256[:16]})")
+    return dest, reasons
+
+
+def _pinned_split_env(ctx: Ctx, dest: Path, det: dict) -> tuple[dict | None, str | None]:
+    env = pinned_env(dest, ctx.options, os.environ)
+    probe = subprocess.run([sys.executable, "-c", "import tanitad; print(tanitad.__file__)"],
+                           cwd=str(dest / "stack"), env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
+    det["tanitad_file"] = probe.stdout.strip()
+    if not os.path.normcase(probe.stdout.strip()).startswith(os.path.normcase(str(dest))):
+        return None, (f"G-SUITE-PINNED: tanitad imports from {probe.stdout.strip() or probe.stderr[-200:]}, "
+                      f"not {dest}")
+    return env, None
+
+
+def job_suite_pinned_split(ctx: Ctx) -> dict[str, dict]:
+    """G-SUITE-PINNED, split mode: `--pinned-half thor` | `devbox-complement` (refcv9-full-d1 ONLY)."""
+    o = ctx.options
+    half = o.get("pinned_half")
+    thor = half == "thor"
+    key = PINNED_THOR_HALF_CHECK if thor else "G-SUITE-PINNED"
+    ev = new_evidence(ctx, key)
+    ev["details"].update(half="thor" if thor else "devbox-complement", mode="thor-half" if thor else "split")
+    det = ev["details"]
+    refuse = "FAIL"
+
+    def out(status: str, reasons: list[str]) -> dict[str, dict]:
+        finish_evidence(ev, status, reasons)
+        return {"G-SUITE-PINNED": ev}
+
+    if ctx.profile not in PINNED_SPLIT_PROFILES:
+        return out(refuse, [f"G-SUITE-PINNED split mode is refused for profile {ctx.profile!r} (PI ruling "
+                            f"2026-11-28: {sorted(PINNED_SPLIT_PROFILES)} only)"])
+    if half not in PINNED_HALVES:
+        return out(refuse, [f"G-SUITE-PINNED: unknown --pinned-half {half!r} (one of {PINNED_HALVES})"])
+    git_dir = o.get("git_dir")
+    pin, prob = env_failure_pin(ctx.prof, ctx.tree)
+    if prob or not git_dir:
+        return out(refuse, [f"G-SUITE-PINNED: {prob or 'needs --git-dir (the commit is archived from git, never a worktree)'}"])
+    commit = resolve_commit(git_dir, ctx.commit)
+    files = pin["files"]
+    skip_ok = ctx.prof.get("suite_pinned_skip_ok", ())
+    det["pin"] = list(ctx.prof.get("suite_env_failures") or [])
+    logs = Path(ctx.out_dir) / "logs" / ("pinned_thor" if thor else "pinned_complement")
+    logs.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------ the Thor half
+    if thor:
+        if o.get("pinned_thor_half"):
+            return out("FAIL", ["G-SUITE-PINNED: --pinned-thor-half belongs to the dev-box complement"])
+        dest, reasons = _pinned_split_archive(ctx, pin, det, commit, reduced=False)
+        if dest is None:
+            return out("ERROR", reasons)
+        env, bad = _pinned_split_env(ctx, dest, det)
+        if env is None:
+            return out("ERROR", [bad])
+        results = _pinned_run_files(files, dest, env, logs, "thor-half")
+        for f in files:
+            k = f"{f['sub']}/{f['file']}"
+            r = results.get(k) or {}
+            if not isinstance(r.get("outcomes"), dict):
+                reasons.append(f"G-SUITE-PINNED[thor-half]: {k} produced no junit (rc {r.get('rc')}): "
+                               f"{str(r.get('tail'))[-200:]}")
+            elif not r.get("n_tests"):
+                reasons.append(f"G-SUITE-PINNED[thor-half]: {k} collected ZERO tests")
+        fok, fdet = flaky_admitted(pin, dest)
+        det["flaky"], det["flaky_ok"] = fdet, sorted(fok)
+        det["files"] = results
+        det["outcomes_sha256"] = sha256_bytes(canonical_json(scrub(
+            {k: (v or {}).get("outcomes") for k, v in sorted(results.items())})))
+        det["mutation_audit"] = _pinned_run_audit(dest, logs, env, o)
+        pats = _pinned_skip_pats(skip_ok)
+        det["n_tests"] = sum(int((r or {}).get("n_tests") or 0) for r in results.values())
+        det["n_not_pass"] = sum(1 for r in results.values() for t, oc in ((r or {}).get("outcomes") or {}).items()
+                                if not _pinned_ok(t, oc, pats))
+        det["complement_files"] = [f"{f['sub']}/{f['file']}" for f in
+                                   pinned_complement_files(files, results, skip_ok)]
+        # the Thor half's own verdict is STRUCTURAL: individual failures are the complement's input, not reasons
+        return out(PINNED_THOR_HALF_OK if not reasons else "FAIL", reasons)
+
+    # ------------------------------------------------------------------ the dev-box complement
+    tp = o.get("pinned_thor_half")
+    if not tp or not Path(tp).is_file():
+        return out("FAIL", [f"G-SUITE-PINNED: no Thor-half evidence (--pinned-thor-half {tp!r})"])
+    try:
+        tev = read_json(tp)
+    except Exception as e:                                            # noqa: BLE001
+        return out("FAIL", [f"G-SUITE-PINNED: the Thor-half evidence is unreadable: {type(e).__name__}: {e}"])
+    th = {"path": str(tp), "sha256": sha256_file(tp)}
+    det["thor_half"] = th
+    why = check_pinned_thor_half(tev, ctx, pin, files)
+    if isinstance(tev, dict):
+        th.update(host=(tev.get("host") or {}).get("node"), status=tev.get("status"),
+                  started_utc=tev.get("started_utc"), finished_utc=tev.get("finished_utc"),
+                  commit=(tev.get("binding") or {}).get("commit"))
+    if why:
+        return out("FAIL", [f"G-SUITE-PINNED: the Thor-half evidence is REFUSED: {w}" for w in why])
+    td = tev["details"]
+    thor_files = td["files"]
+    comp = pinned_complement_files(files, thor_files, skip_ok)
+    comp_keys = [f"{f['sub']}/{f['file']}" for f in comp]
+    det["complement_files"] = comp_keys
+    taud = td.get("mutation_audit") or {}
+    det["mutation_audit_thor"] = {k: taud.get(k) for k in ("ok", "summary", "rc", "why")}
+    reasons = []
+    dev_files: dict[str, dict] = {}
+    dev_audit = None
+    if comp or not taud.get("ok"):
+        dest, reasons = _pinned_split_archive(ctx, pin, det, commit, reduced=True)
+        if dest is None:
+            return out("ERROR", reasons)
+        env, bad = _pinned_split_env(ctx, dest, det)
+        if env is None:
+            return out("ERROR", [bad])
+        dev_files = _pinned_run_files(comp, dest, env, logs, "complement")
+        if not taud.get("ok"):
+            dev_audit = _pinned_run_audit(dest, logs, env, o)
+    else:
+        det["archive"] = None
+        _say("G-SUITE-PINNED[complement]: every Thor-half test is a pass or a registered skip -- nothing to re-run")
+    det["files"] = dev_files
+    det["mutation_audit_devbox"] = ({k: dev_audit.get(k) for k in ("ok", "summary", "rc", "why")}
+                                    if dev_audit else None)
+    pin_flaky = {str(f.get("id")) for f in (pin.get("flaky") or []) if f.get("id")}
+    fl = set(map(str, td.get("flaky_ok") or [])) & pin_flaky
+    r2, d2 = merge_pinned_split(files, thor_files, dev_files, comp_keys, skip_ok, fl)
+    reasons += r2
+    det.update(d2)
+    if not (taud.get("ok") or (dev_audit or {}).get("ok")):
+        reasons.append("G-SUITE-PINNED: " + str((dev_audit or taud).get("why") or "the guard mutation audit was "
+                       "not CAUGHT on either host") + " -- every guard's mutation arm must be CAUGHT on one host")
+    det["dropped"] = (det.get("archive") or {}).get("dropped") or []
+    return out("FAIL" if reasons else "PASS", reasons)
 
 
 # --------------------------------------------------------------------------------------------- #
@@ -11304,6 +11775,16 @@ def evidence_rejections(ev: dict, binding: dict, data: dict) -> list[str]:
         mine = data.get(f)
         if mine is None or fp_key(mine) != fp_key(fp):
             why.append(f"input {f} read with a different fingerprint")
+    if ev.get("check") == "G-SUITE-PINNED":          # split mode (PI 2026-11-28): the two halves are never confusable
+        d = ev.get("details") if isinstance(ev.get("details"), dict) else {}
+        if d.get("half") == "thor" or d.get("mode") == "thor-half":
+            why.append("a Thor-half evidence is never G-SUITE-PINNED (only the dev-box complement's merge is)")
+        if d.get("mode") == "split":
+            if binding.get("profile") not in PINNED_SPLIT_PROFILES:
+                why.append(f"split-mode G-SUITE-PINNED is not admitted for profile {binding.get('profile')!r}")
+            if d.get("half") != "devbox-complement" or not _HEX64.match(
+                    str((d.get("thor_half") or {}).get("sha256") or "")):
+                why.append("split-mode G-SUITE-PINNED without the dev-box complement's merge of a sha256-named Thor half")
     return why
 
 
@@ -11400,6 +11881,7 @@ def cmd_run(a) -> int:
         commit = resolve_commit(a.git_dir, commit)
     if not _HEX40.match(commit or ""):
         raise GateError(f"--commit must be a 40-char sha (or resolvable with --git-dir): {commit!r}")
+    pinned_split_refusals(a.profile, a.pinned_half, a.pinned_thor_half, a.pinned_reduce_bytes, a.git_dir)
     out = Path(a.out_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
     arm = a.arm or os.environ.get(ARM_ENV) or None
@@ -11419,6 +11901,8 @@ def cmd_run(a) -> int:
         "ram_wait_s": int(a.ram_wait_s), "git_dir": a.git_dir, "baseline": a.baseline,
         "suites": a.suites.split(",") if a.suites else None,
         "suite_work": a.suite_work, "skip_mutation_audit": bool(a.skip_mutation_audit),
+        "pinned_half": a.pinned_half, "pinned_reduce_bytes": int(a.pinned_reduce_bytes),
+        "pinned_thor_half": (str(Path(a.pinned_thor_half).resolve()) if a.pinned_thor_half else None),
         "eval_loader": a.eval_loader or str(_resolve_repo_rel(tree, profile["eval_loader"])),
         "eval_kit": a.eval_kit, "eval_stamps": a.eval_stamps,
         "eval_remap_overrides": a.eval_remap_overrides,
@@ -11500,6 +11984,8 @@ def cmd_run(a) -> int:
     bad = sorted(set(wanted) - set(CHECKS))
     if bad:
         raise GateError(f"unknown checks {bad}")
+    if a.pinned_half and "G-SUITE-PINNED" not in wanted:
+        raise GateError(f"--pinned-half {a.pinned_half} runs G-SUITE-PINNED, which this run does not select")
     for job, cs in JOBS:
         sel = [c for c in cs if c in wanted]
         if sel:
@@ -11675,6 +12161,15 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--suites", default=None, help="comma list of suite dirs (default profile)")
     r.add_argument("--suite-work", default=None, help="short path for the clean trees (MAX_PATH)")
     r.add_argument("--skip-mutation-audit", action="store_true", help="(never a PASS)")
+    r.add_argument("--pinned-half", choices=PINNED_HALVES, default=None,
+                   help="G-SUITE-PINNED SPLIT MODE (PI 2026-11-28; profile refcv9-full-d1 ONLY): `thor` = every pinned file on "
+                        "the FULL archive (evidence G-SUITE-PINNED-THOR-HALF); `devbox-complement` = re-run the files Thor cannot "
+                        "pass on a REDUCED tree and merge into the real G-SUITE-PINNED (needs --pinned-thor-half)")
+    r.add_argument("--pinned-thor-half", default=None,
+                   help="devbox-complement: the Thor half's G-SUITE-PINNED-THOR-HALF.json (refused unless bound to this commit / "
+                        "tree / argv / profile, run on the FULL archive, with a junit for every pinned file)")
+    r.add_argument("--pinned-reduce-bytes", type=int, default=PINNED_REDUCE_BYTES_DEFAULT,
+                   help="devbox-complement: drop members of `TanitAD Research Lab/` and `FlyWheels/` of >= this many bytes")
     r.add_argument("--eval-loader", default=None)
     r.add_argument("--eval-kit", default=None)
     r.add_argument("--eval-stamps", default=None, help="a config.json with the train-split stamps")
