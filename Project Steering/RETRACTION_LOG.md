@@ -19055,3 +19055,18 @@ fde8b716 states it in its message.
 
 **Class / rule: A SUM QUOTED AS ONE FILE'S COUNT.** A pass count copied into a message must be read off that file's own log line,
 never added up across files in the head. Same family as "a number carries its arm and its artifact path".
+
+## 2026-11-28 — R-VDAC-TRK-NOVELTY-1: GOALS row H-VDAC-TRK-1 (d94be234) presented checking the TRACKED trajectory as new (Master Mind)
+
+**What was wrong:** the row said the H-VDAC-P6-1 S0 shortfall is "explained by checking PLANNED geometry", and framed a tracked-trajectory
+drivable check as a new hypothesis. The predecessor had already built it. G0-TRK (`vdac/trk/final/trk_verify.md`, 2026-11-11) reproduces
+NAVSIM's DAC on tracked states on 777,344 / 777,344 proposals, and amendment A2 made VDAC-V0T (the tracked hard veto) the card's primary
+arm. Found by the MM within the hour, while reading the predecessor's directory (`vdac/trk/`, A1-A5) to write the successor card.
+
+**What is true:** S0 itself was pose-only, so "S0's R 0.348 is limited by planned geometry" stands. It is MEASURED on navtest, where
+C1's planned-proposal check keeps 0.351 of the tracked ceiling. No tracked veto with a trained head was ever READ: S2 never ran because
+every head failed S1-Q. The successor card `PK/raw/2026-11-28-vdactrk/PREREG_VDAC_TRK.md` reuses G0-TRK and credits it.
+
+**Class / rule: NOVELTY ASSERTED BEFORE READING THE PREDECESSOR'S AMENDMENTS AND SUBFOLDERS.** Same family as "absence found at ONE
+location is not absence": before calling a mechanism new, list the predecessor card's directory and amendments and grep the register
+for the mechanism's NAME and its instrument (here `trk`, "tracked", "V0T"), not only for the hypothesis id.
