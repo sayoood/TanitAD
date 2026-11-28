@@ -14,6 +14,7 @@ import csv
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -61,6 +62,20 @@ def prof_ds(w, fam, arm="s0"):
     p["init_from_sha256"] = D.sha256_file(w["ckpt"])
     p["suite"] = [{"raw": [sys.executable, "-c", "print('ZZTEST_PASS')"], "token": "ZZTEST_PASS"}]
     return p
+
+
+def mint_env(tmp, w, fam, argv, tag):
+    """A REAL minted PASS token for `argv` (the way test_e2e does): returns ({TANITAD_GATE_KEY_FILE, TOKEN_ENV}, token path)."""
+    prof = prof_ds(w, fam)
+    name = SHG.DS_FAMILIES[fam]["name"]["s0"]
+    prof["name"] = name
+    keyf = tmp / f"keys_{tag}" / "gate.key"
+    key = GT.load_key(keyf, create=True)
+    gate_out = tmp / f"gate_{tag}"
+    L.run_checks(prof, argv, HERE.parent, gate_out, commit="ab" * 20, key=key)
+    verdict, path, tok = L.finalize(prof, argv, HERE.parent, gate_out, key, commit="ab" * 20)
+    assert verdict == "PASS", tok["reasons"]
+    return {"TANITAD_GATE_KEY_FILE": str(keyf), T.TOKEN_ENV: str(path)}, path
 
 
 def smoke(w, out, fam, steps, save, arm_env=None, extra=(), perm=None):
@@ -277,9 +292,21 @@ def _subset_index(w, logs, dst: Path):
     return dst
 
 
+LC_STATE: dict = {}                                                                     # the learning-curve test's argv + minted token, reused by test_lc_token_gate
+
+
+def _lc(argv, env_extra=None):
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONIOENCODING="utf-8")
+    env.pop(T.TOKEN_ENV, None)
+    env.pop(T.ARM_ENV, None)
+    env.update(env_extra or {})
+    return subprocess.run([sys.executable, str(HERE / "safehead_lc.py"), *argv], cwd=str(HERE), capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+
+
 def test_learning_curve(tmp):
     """M6 on a synthetic cache + CTRL-PARENT: at n = |parent| the no-margin argmax and the OOF PDMS equal a banked `cv5` cv_select.json produced by the TRAINER on the parent's logs only;
-    a banked table that is off by 1e-6 FAILS the control (exit 1)."""
+    a banked table that is off by 1e-6 FAILS the control (exit 1).  AMENDMENT 1: the run is TOKEN-GATED -- it runs on a REAL minted PASS token for the lc's own trainer argv (s0 recipe:
+    2,000 steps, the registered save steps), exactly as test_e2e does for the trainer."""
     w = mk(tmp, "lc", n_tr_logs=6, n_ho_logs=3, per_log=24, seed=5)
     logs = sorted({r["log"] for r in csv.DictReader(open(w["sealed"], newline="", encoding="utf-8"))})
     parent = [logs[0], logs[2], logs[4], logs[6], logs[8]]                              # 5 logs incl. held-out ones (the trainer needs held-out tokens)
@@ -290,46 +317,68 @@ def test_learning_curve(tmp):
     # the banked parent: the TRAINER's `cv5` over ONLY the parent's logs
     wp = dict(w, sealed=pidx)
     bank = tmp / "bank"
-    a = TS.argv_for(wp, bank, extra=["--smoke-steps", "40"])
-    a = TS._swap(TS._swap(a, "--rows", "2"), "--save-steps", "0,20,40") + ["--select", "cv5"]
+    a = TS.argv_for(wp, bank, extra=["--smoke-steps", "2000"])                          # the profile pins 2,000 steps + the save steps; --smoke-steps runs tokenless
+    a = TS._swap(a, "--rows", "2") + ["--select", "cv5"]
     r = TS.trainer(a)
     assert r.returncode == 0, r.stderr[-600:]
     banked = bank / "cv_select.json"
     assert load_sel(bank)["n_logs"] == 5
     out = tmp / "lc_out"
-    argv = ["--parent-logs", str(pl), "--sizes", "5,7,N", "--parent-cv-select", str(banked)] + TS._swap(TS._swap(TS._swap(argv_ds(w, out, "ds_ep"), "--steps", "40"), "--save-steps", "0,20,40"), "--out", str(out))
-    r = subprocess.run([sys.executable, str(HERE / "safehead_lc.py"), *argv], cwd=str(HERE), capture_output=True, text=True, encoding="utf-8", errors="replace",
-                                                 env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONIOENCODING="utf-8"))
+    rest = argv_ds(w, out, "ds_ep")                                                    # the lc's TRAINER argv == what the token binds (s0 recipe, rows 2, cv5m)
+    argv = ["--parent-logs", str(pl), "--sizes", "5,N", "--parent-cv-select", str(banked)] + rest
+    env, tokpath = mint_env(tmp, w, "ds_ep", rest, "lc")
+    LC_STATE.update(argv=argv, env=env, rest=rest, w=w, out=out, tokpath=tokpath)
+    r = _lc(argv, env)
     assert r.returncode == 0 and "ZZSHLC_DONE" in r.stdout, (r.stdout[-600:], r.stderr[-800:])
     lc = json.loads((out / "lc.json").read_text(encoding="utf-8"))
-    assert sorted(lc["sets"]) == ["5", "7", "9"] and [lc["sets"][k]["n_logs"] for k in ("5", "7", "9")] == [5, 7, 9]
+    assert lc["token"]["profile"] == SHG.DS_FAMILIES["ds_ep"]["name"]["s0"] and lc["token"]["token_sha256"] == D.sha256_file(tokpath), lc["token"]   # the token is recorded
+    assert sorted(lc["sets"]) == ["5", "9"] and [lc["sets"][k]["n_logs"] for k in ("5", "9")] == [5, 9]
     cp = lc["ctrl_parent"]
     assert cp["ok"] and cp["max_abs_diff"] <= EPS and cp["our_no_margin_argmax_step"] == cp["banked_chosen_step"], cp
-    assert lc["sets"]["5"]["per_step"]["40"]["oof_pdms"] == load_sel(bank)["per_step"]["40"]["oof_pdms"]
-    assert lc["summary"]["sizes"] == [5, 7, 9] and len(lc["summary"]["best_step_gain_point"]) == 3
-    for k in ("5", "7", "9"):                                                         # every set carries the OOF gain + CI at every saved step, and its decision recomputes from its own table
+    assert lc["sets"]["5"]["per_step"]["2000"]["oof_pdms"] == load_sel(bank)["per_step"]["2000"]["oof_pdms"]
+    assert lc["summary"]["sizes"] == [5, 9] and len(lc["summary"]["best_step_gain_point"]) == 2
+    for k in ("5", "9"):                                                         # every set carries the OOF gain + CI at every saved step, and its decision recomputes from its own table
         S = lc["sets"][k]
-        assert all(set(S["margin"][s]["gain"]) == {"point", "lo", "hi"} for s in ("0", "20", "40"))
+        assert all(set(S["margin"][s]["gain"]) == {"point", "lo", "hi"} for s in ("0", "250", "500", "1000", "2000"))
         assert CVM.recheck({"per_step": S["per_step"], "per_log": S["per_log"], "margin_rule": CVM.REGISTERED_RULE, "margin": S["margin"], "chosen_step": S["chosen_step"]})["match"]
     # the 9-log set equals what the trainer's own cv5m writes on the full cache (same recipe, same folds)
-    full = smoke(w, tmp / "lc_full", "ds_ep", 40, "0,20,40")
+    full = smoke(w, tmp / "lc_full", "ds_ep", 2000, SHG.REGISTERED["--save-steps"])
     assert load_sel(full)["per_step"] == lc["sets"]["9"]["per_step"] and load_sel(full)["margin"] == lc["sets"]["9"]["margin"]
     # CTRL-PARENT must be able to FAIL
     bad = json.loads(banked.read_text())
-    bad["per_step"]["40"]["oof_pdms"] += 1e-6
+    bad["per_step"]["2000"]["oof_pdms"] += 1e-6
     (tmp / "bank_bad.json").write_text(json.dumps(bad), encoding="utf-8")
-    out2 = tmp / "lc_out2"
+    shutil.rmtree(out)                                                                  # the token binds the argv INCLUDING --out, so the second run reuses the SAME (emptied) out
     argv2 = list(argv)
-    argv2[argv2.index("--parent-cv-select") + 1] = str(tmp / "bank_bad.json")
-    argv2[argv2.index("--out") + 1] = str(out2)
-    r2 = subprocess.run([sys.executable, str(HERE / "safehead_lc.py"), *argv2], cwd=str(HERE), capture_output=True, text=True, encoding="utf-8", errors="replace",
-                                                  env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONIOENCODING="utf-8"))
-    assert r2.returncode == 1 and "ZZSHLC_FAIL CTRL-PARENT" in r2.stdout and json.loads((out2 / "lc.json").read_text())["ctrl_parent"]["ok"] is False, (r2.stdout[-400:], r2.stderr[-400:])
-    ok("learning curve (synthetic, 5/7/9 logs): sets nested; each set's OOF gain + CI at every step recomputes from its table; the n = |parent| set == the banked cv5 cv_select.json (argmax, OOF PDMS "
+    argv2[argv2.index("--parent-cv-select") + 1] = str(tmp / "bank_bad.json")           # --parent-cv-select is the lc's own flag: it is not in `rest`, the token still verifies
+    r2 = _lc(argv2, env)
+    assert r2.returncode == 1 and "ZZSHLC_FAIL CTRL-PARENT" in r2.stdout and json.loads((out / "lc.json").read_text())["ctrl_parent"]["ok"] is False, (r2.stdout[-400:], r2.stderr[-400:])
+    shutil.rmtree(out)
+    out.mkdir()                                                                         # an empty --out again, for test_lc_token_gate
+    ok("learning curve (synthetic, 5/9 logs, on a REAL minted PASS token, 2,000 steps): sets nested; each set's OOF gain + CI at every step recomputes from its table; the n = |parent| set == the banked cv5 cv_select.json (argmax, OOF PDMS "
        "<= 1e-9, CTRL-PARENT PASS); the N-log set == the trainer's own cv5m; a banked table off by 1e-6 FAILS CTRL-PARENT (exit 1)")
 
 
 # ============================================================================================ CTRL-INDEX
+def test_lc_token_gate(tmp):
+    """AMENDMENT 1: safehead_lc.py TRAINS heads, so it refuses without a launch-gate PASS token, exactly as the trainer does.  No token, a token minted for a DIFFERENT argv (--lr / --seed
+    swapped) and an active regression arm are each refused BEFORE any fit (no lc.json)."""
+    argv, env, out = LC_STATE["argv"], LC_STATE["env"], LC_STATE["out"]
+    assert out.is_dir() and not any(out.iterdir()), "test_learning_curve must run first and leave --out empty"
+    r = _lc(argv)                                                                       # no token at all
+    assert r.returncode != 0 and "REFUSED" in (r.stdout + r.stderr) and "no launch-gate token" in (r.stdout + r.stderr), (r.stdout[-300:], r.stderr[-400:])
+    assert not (out / "lc.json").exists()
+    r = _lc(TS._swap(argv, "--lr", "0.001"), env)                                       # a token for the s0 argv, a run with another lr
+    assert r.returncode != 0 and "does not verify" in (r.stdout + r.stderr), (r.stdout[-300:], r.stderr[-400:])
+    r = _lc(TS._swap(argv, "--seed", "7"), env)
+    assert r.returncode != 0 and "REFUSED" in (r.stdout + r.stderr), (r.stdout[-300:], r.stderr[-400:])
+    r = _lc(argv, dict(env, **{T.ARM_ENV: "ds_no_margin"}))                             # a regression arm never trains, token or not
+    assert r.returncode != 0 and "regression arm is active" in (r.stdout + r.stderr), (r.stdout[-300:], r.stderr[-400:])
+    assert not (out / "lc.json").exists() and not any(out.iterdir())
+    ok("learning-curve token gate (AMENDMENT 1): with NO token, with a token minted for a different argv (--lr / --seed swapped) and under an active regression arm safehead_lc.py exits "
+       "non-zero (REFUSED / does not verify) before any fit and writes no lc.json")
+
+
 def test_ctrl_index(tmp):
     def write(path, rows):
         with open(path, "w", newline="", encoding="utf-8") as fh:
@@ -501,6 +550,7 @@ def main() -> int:
             test_table_and_recheck(tmp, fam)
         test_noise_world_cv5_vs_cv5m(tmp)
         test_learning_curve(tmp)
+        test_lc_token_gate(tmp)
         test_refusals(tmp)
         for fam in FAMS:
             test_gate_clean(tmp, fam)

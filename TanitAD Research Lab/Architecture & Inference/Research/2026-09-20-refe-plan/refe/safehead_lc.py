@@ -11,14 +11,16 @@ CTRL-PARENT: with --parent-cv-select <the parent's banked cv_select.json>, the n
     python safehead_lc.py --parent-logs <parent_logs.txt> --sizes 35,70,110,N [--parent-cv-select <cv_select.json>] \\
         <the trainer's argv: --cache-index ... --init-from ... --heldout-logs ... --navtest-logs ... --out <empty dir> --seed 0 --steps 2000 --lr 0.0003 --batch 32 --gamma 2.0
          --rows 2|0,1,3,5 --save-steps 0,250,500,1000,2000 --select cv5m>
-This is an ANALYSIS, not a training launch: it saves no head and is not token-gated.  It still refuses a navtest log or token in the fit sets (CTRL-LEAK) and a feature
-mismatch (CTRL-FEAT), and runs under no deliberate-regression arm.
+It saves no head, but it TRAINS heads (T.cv_select), so it is a training launch for CLAUDE.md "NO TRAINING LAUNCH WITHOUT A LAUNCH-GATE PASS" (PI 2026-09-26): like the trainer's
+`main`, it refuses under a regression arm and calls T.require_token on the trainer argv (the argv left after its own flags), with no bypass.  DATA-SCALE CODE AMENDMENT 1.
+It also refuses a navtest log or token in the fit sets (CTRL-LEAK) and a feature mismatch (CTRL-FEAT).
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -81,6 +83,9 @@ def run(argv) -> int:
         raise SystemExit("REFUSED: the learning curve runs --select cv5m, with no --permute-labels-seed, --smoke-steps or --build-only")
     if 0 not in cfg.save_steps:
         raise SystemExit("REFUSED: --save-steps must include 0")
+    if os.environ.get(T.ARM_ENV):                                                                 # AMENDMENT 1: the trainer's own rule (safehead_train.run), no bypass
+        raise SystemExit(f"REFUSED: a regression arm is active ({os.environ[T.ARM_ENV]}): a training launch never runs under one")
+    tok = T.require_token(rest)
     out = Path(cfg.out)
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
@@ -133,7 +138,7 @@ def run(argv) -> int:
             raise SystemExit(f"REFUSED: CTRL-PARENT needs the n = {len(parent_logs)} set among --sizes")
         cp = ctrl_parent(res[str(len(parent_logs))], banked, a.atol)
     rep = {"argv": list(argv), "evidence": "MEASURED (out-of-fold navtrain, rebuilt-cache PDMS; descriptive, NOT navtest)", "parent_logs": len(parent_logs), "sets": res,
-           "summary": summary, "ctrl_parent": cp, "seconds": round(time.time() - t0, 1),
+           "summary": summary, "ctrl_parent": cp, "token": tok, "seconds": round(time.time() - t0, 1),
            "set_logs_sha256": {str(n): hashlib.sha256("\n".join(lg).encode("utf-8")).hexdigest() for n, lg in sets.items()}}
     (out / "lc.json").write_text(json.dumps(rep, indent=1), encoding="utf-8")
     if cp is not None and not cp["ok"]:
