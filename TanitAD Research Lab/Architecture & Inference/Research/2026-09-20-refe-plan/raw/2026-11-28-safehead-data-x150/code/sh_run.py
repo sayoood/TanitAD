@@ -183,11 +183,12 @@ def main():
     pending = [l for l in by if not log_done(l)]
     dumped = {l for l in by if os.path.exists(L.wp("dump", f"{l}.dump.npz"))}
     started = set()
+    dump_fail = 0
     while True:
         todo = [l for l in pending if not log_done(l) and l not in failed]
         if not todo:
             break
-        batch = [l for l in todo if l in ready and l not in dumped]
+        batch = [l for l in todo if l in ready and l not in dumped][:int(os.environ.get("SH_DUMP_BATCH", "8"))]   # MM 2026-11-28: re-gate memory often
         if batch:
             if not memgate("dump"):
                 say("memgate gave up")
@@ -200,9 +201,19 @@ def main():
             rc = run([L.PY_D, os.path.join(HERE, "sh_dump.py"), "--job", jp, "--ckpt", L.C1_CKPT, "--expect-sha256", L.C1_SHA, "--out-dir", L.wp("dump"), "--jobname", "refe-safehead-dump"],
                      E.denv(), L.wp("logs", "dump.log"))
             if rc != 0:
-                say(f"DUMP FAILED rc {rc}; stopping (see logs/dump.log)")
-                open(L.wp("markers", "chain.FAILED"), "w").write(f"dump rc {rc}")
-                sys.exit(1)
+                n_new = sum(os.path.exists(L.wp("dump", f"{l}.dump.npz")) for l in batch)   # MM 2026-11-28: OOM is transient on this box
+                dump_fail = 0 if n_new else dump_fail + 1
+                if dump_fail >= int(os.environ.get("SH_DUMP_RETRIES", "4")):
+                    say(f"DUMP FAILED rc {rc} ({dump_fail} consecutive batches with no new dump); stopping (see logs/dump.log)")
+                    open(L.wp("markers", "chain.FAILED"), "w").write(f"dump rc {rc}")
+                    sys.exit(1)
+                say(f"DUMP FAILED rc {rc} ({n_new}/{len(batch)} dumped; consecutive no-progress {dump_fail}); retrying after 120 s + memgate")
+                for l in batch:
+                    if os.path.exists(L.wp("dump", f"{l}.dump.npz")):
+                        dumped.add(l)
+                time.sleep(120)
+                continue
+            dump_fail = 0
             for l in batch:
                 if os.path.exists(L.wp("dump", f"{l}.dump.npz")):
                     dumped.add(l)
