@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-11-28-datascale\ds_read.py", line 95, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-11-28-datascale\ds_read.py", line 91, in main
+    return L2.main(argv)
+           ~~~~~~~^^^^^^
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-11-27-l2next\l2next_read.py", line 489, in main
+    return {"prep": cmd_prep, "read": cmd_read, "confirm": cmd_confirm}[a.cmd](a)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-11-27-l2next\l2next_read.py", line 342, in cmd_read
+    cvr = {k: _ctrl_cv(D, Path(getattr(a, f"run_{k}")), tc, runs[k]["step"], a) for k in ("s0", "s1", "red")}
+              ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\raw\2026-11-28-datascale\ds_read.py", line 69, in _ctrl_cv_ds
+    rc = CVM.recheck(cvs)
+  File "E:\Projects\TanitAD-artifacts\datascale\plumb\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\safehead_cvm.py", line 117, in recheck
+    dec = decide(sel["per_log"], steps, sel["margin_rule"])
+                 ~~~^^^^^^^^^^^
+KeyError: 'per_log'
