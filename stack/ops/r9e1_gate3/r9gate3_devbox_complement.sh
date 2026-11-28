@@ -57,8 +57,12 @@ export TANITAD_REFAV1_CUDA_TEST=1 TANITAD_LIDAR_BEV_GT_DIR=E:/Projects/TanitAD-a
 mkdir -p "${SW%/*}" "$OUT"
 say "launch_gate run --pinned-half devbox-complement (argv $ARGVF)"
 t0=$(date +%s)
-# MSYS_NO_PATHCONV is for THIS script's ssh / scp only: exported into the gate it reaches pytest (MEASURED 2026-11-03, r9gate3_devbox_pinned.sh)
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$W/tree/stack;$W/tree/stack/scripts" env -u MSYS_NO_PATHCONV timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" "$W/tree/stack/scripts/launch_gate.py" run \
+# MSYS_NO_PATHCONV=1 STAYS SET for the gate's exec, so MSYS hands every argument to native python LITERALLY: each one is already a
+# Windows path, and a D1 arm's --path-map FROM is a THOR path. `env -u MSYS_NO_PATHCONV` re-enabled the conversion and MSYS rewrote it
+# to C:\Program Files\Git\home\nvidia\... (MEASURED 2026-11-28 11:28Z, D1 af1ce565: ZZGATE-ERRORZZ in 74 s). NOPC_SHIM then drops the
+# variable from the gate's environment before the gate starts, so it still never reaches pytest (MEASURED 2026-11-03: 6 / 28 FAIL with it).
+NOPC_SHIM='import os, subprocess, sys; os.environ.pop("MSYS_NO_PATHCONV", None); sys.exit(subprocess.call([sys.executable] + sys.argv[1:]))'
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$W/tree/stack;$W/tree/stack/scripts" timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" -I -c "$NOPC_SHIM" "$W/tree/stack/scripts/launch_gate.py" run \
   --profile refcv9-full-d1 --stage devbox --tree "$W/tree" --commit "$C40" --git-dir "$REPO/.git" --argv-file "$ARGVF" ${PMAP:+--path-map "$PMAP"} \
   --suite-work "$SW" --out-dir "$OUT" --cpu-only --pinned-half devbox-complement --pinned-thor-half "$W/thor_half/G-SUITE-PINNED-THOR-HALF.json" > "$LOG" 2>&1 < /dev/null
 EV="$OUT/evidence/G-SUITE-PINNED.json"

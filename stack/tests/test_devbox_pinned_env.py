@@ -27,13 +27,22 @@ def _gate_lines(src: str) -> list:
     return [l for l in src.splitlines() if '/stack/scripts/launch_gate.py" run' in l and not l.lstrip().startswith("#")]
 
 
-def test_the_pinned_gate_runs_with_msys_no_pathconv_unset():
-    src = DRIVER.read_text(encoding="utf-8")
+def _shim_ok(src: str) -> bool:
+    """2026-11-28 (MM 4a3d05): `env -u MSYS_NO_PATHCONV` kept the variable out of pytest but RE-ENABLED MSYS argument conversion for the
+    gate's own exec, which rewrote a D1 arm's Thor-path --path-map (MEASURED 11:28Z, D1 af1ce565: ZZGATE-ERRORZZ). The gate now starts
+    through NOPC_SHIM: the exec stays literal and the variable is dropped inside python (test_devbox_gate_launch_nopathconv.py runs it)."""
     gl = _gate_lines(src)
-    assert len(gl) == 1, gl                                                    # ONE gate invocation in the driver
-    line = gl[0]
-    assert "env -u MSYS_NO_PATHCONV" in line, line
-    assert line.index("env -u MSYS_NO_PATHCONV") < line.index('"$DEVPY"'), line   # the unset wraps the gate's python, not a later command
+    shim = [l.strip() for l in src.splitlines() if l.strip().startswith("NOPC_SHIM=")]
+    return (len(gl) == 1 and "env -u MSYS_NO_PATHCONV" not in gl[0]
+            and '"$DEVPY" -I -c "$NOPC_SHIM" "$T/stack/scripts/launch_gate.py" run' in gl[0]
+            and len(shim) == 1 and 'os.environ.pop("MSYS_NO_PATHCONV", None)' in shim[0]
+            and "subprocess.call([sys.executable] + sys.argv[1:])" in shim[0])
+
+
+def test_the_pinned_gate_runs_through_the_nopc_shim_not_under_env_u():
+    src = DRIVER.read_text(encoding="utf-8")
+    assert len(_gate_lines(src)) == 1, _gate_lines(src)                        # ONE gate invocation in the driver
+    assert _shim_ok(src), _gate_lines(src)
 
 
 def test_the_driver_still_exports_it_for_its_own_ssh_and_scp():
@@ -42,11 +51,14 @@ def test_the_driver_still_exports_it_for_its_own_ssh_and_scp():
     assert any(l.lstrip().startswith(("ssh ", "scp ")) or " ssh -n" in l or "scp -q" in l for l in src.splitlines())
 
 
-def test_a_mutated_driver_without_the_unset_is_caught():
+def test_a_mutated_driver_without_the_shim_or_back_on_env_u_is_caught():
     src = DRIVER.read_text(encoding="utf-8")
-    bad = src.replace("env -u MSYS_NO_PATHCONV ", "")
-    assert bad != src
-    assert not any("env -u MSYS_NO_PATHCONV" in l for l in _gate_lines(bad))
+    no_shim = src.replace('"$DEVPY" -I -c "$NOPC_SHIM" ', '"$DEVPY" ')               # the variable reaches pytest (2026-11-03)
+    env_u = src.replace('timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" -I -c "$NOPC_SHIM" ',
+                        'env -u MSYS_NO_PATHCONV timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" ')   # the af1ce565 form: the map is rewritten
+    no_pop = src.replace('os.environ.pop("MSYS_NO_PATHCONV", None); ', '')
+    for bad in (no_shim, env_u, no_pop):
+        assert bad != src and not _shim_ok(bad)
 
 
 @R2.needs_bash
