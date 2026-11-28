@@ -1,0 +1,48 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1949, in writestr
+    dest.write(data)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1252, in write
+    self._fileobj.write(data)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+MemoryError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 170, in write_npz_deterministic
+    zf.writestr(zi, b.getvalue())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1948, in writestr
+    with self.open(zinfo, mode='w') as dest:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1289, in close
+    self._zipfile.start_dir = self._fileobj.tell()
+                              ~~~~~~~~~~~~~~~~~~^^
+ValueError: I/O operation on closed file.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 632, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 615, in main
+    r = merge_all(a)
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 581, in merge_all
+    rec["v9"] = merge_v9(a.v9[0], a.v9[1], ids, o("v9_labels_union.npz"))
+                ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 257, in merge_v9
+    write_npz_deterministic(out_npz, out)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "F:\TanitAD-scratch\datascale\pod\deliver\study\dscale10k_merge.py", line 159, in write_npz_deterministic
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
+         ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 1428, in __exit__
+    self.close()
+    ~~~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\zipfile\__init__.py", line 2005, in close
+    self.fp.seek(self.start_dir)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+MERGE RC 1
