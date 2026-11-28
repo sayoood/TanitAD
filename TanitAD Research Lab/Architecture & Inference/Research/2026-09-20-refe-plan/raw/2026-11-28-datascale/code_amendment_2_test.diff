@@ -1,0 +1,14 @@
+75,76c75,77
+<     L.run_checks(prof, argv, HERE.parent, gate_out, commit="ab" * 20, key=key)
+<     verdict, path, tok = L.finalize(prof, argv, HERE.parent, gate_out, key, commit="ab" * 20)
+---
+>     commit = L._commit_of(HERE.parent, "ab" * 20)   # CODE AMENDMENT 2: the gate's own resolver (the SHIP_MANIFEST's commit in a shipped tree, as in every real G-SUITE run)
+>     L.run_checks(prof, argv, HERE.parent, gate_out, commit=commit, key=key)
+>     verdict, path, tok = L.finalize(prof, argv, HERE.parent, gate_out, key, commit=commit)
+521,522c522,524
+<     L.run_checks(prof, argv, HERE.parent, out, commit="ab" * 20, key=key)
+<     verdict, path, tok = L.finalize(prof, argv, HERE.parent, out, key, commit="ab" * 20)
+---
+>     commit = L._commit_of(HERE.parent, "ab" * 20)   # CODE AMENDMENT 2 (same as mint_env)
+>     L.run_checks(prof, argv, HERE.parent, out, commit=commit, key=key)
+>     verdict, path, tok = L.finalize(prof, argv, HERE.parent, out, key, commit=commit)

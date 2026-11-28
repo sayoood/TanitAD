@@ -1,0 +1,135 @@
+ok 01 cv5m rule on constructed tables: a +noise step wins the no-margin argmax and cv5m chooses 0; a clear gain is chosen; ties earliest; the largest gain wins; each of NC, DAC, TTC, EP, C alone (CI-hi < 0) blocks a step; a worse-but-not-separated sub-score does not; all-worse -> step 0
+ok 02 CTRL-MARGIN: ds_no_margin turns the +noise fixture's choice 0 -> 100; ds_guard_no_ep turns the EP-only fixture's choice 0 -> 100; neither mutation masks the other; the built rule differs from the registered one
+ok 03 estimator: the CI equals p5c_read.Boot on the RAW per-token values (10,000 draws, seed 20260927, 95 % percentile) to 1e-9 for the gain and a sub-score; safehead_cvm holds no estimator of its own
+ok 04 learning-curve sets: nested, the smallest is EXACTLY the parent's logs, each larger set adds the others in sha256(log name) order, independent of arrival order; out-of-range sizes and unknown parents are refused
+ok 05 CTRL-INDEX: the parent's 12 tokens bit-identical by sha + 12 new rows over 6 logs -> OK; 7 broken indices (a moved sha, a dropped / re-labelled / re-split parent token, no new rows, a log in both halves, a log in two splits) and a duplicate token and a missing sha256 column are each refused
+ok 06 profiles: six NEW names (refe_ds_sh_*, refe_ds_ep_*), 55 in all; the 40 older, the 3 SAFE-HEAD and the 6 L2-NEXT profiles are fingerprint-identical (none moved)
+ok 07 CTRL-SH-UNCHANGED (cv5): EP-HEAD `--select cv5` is bit-identical to the tip trainer: heads, metrics.jsonl, cv_select.json bytes and head meta equal the pinned probe; no cv5m key leaks in
+ok 08 [ds_sh] cv5m (synthetic): per-log table for 9 logs x 3 steps x 6 metrics; its pooled numbers equal the token-level OOF numbers (pdms <= 1e-9, sub-scores <= 1e-4: the parent's float32 means); the choice (40) == the rule recomputed from the table, CIs bit-equal; no-margin argmax 40 reported; eligibility == (CI-lo > 0 and guard); a perturbed table fails the recheck
+ok 09 [ds_ep] cv5m (synthetic): per-log table for 9 logs x 3 steps x 6 metrics; its pooled numbers equal the token-level OOF numbers (pdms <= 1e-9, sub-scores <= 1e-4: the parent's float32 means); the choice (40) == the rule recomputed from the table, CIs bit-equal; no-margin argmax 40 reported; eligibility == (CI-lo > 0 and guard); a perturbed table fails the recheck
+ok 10 +noise (trainer, synthetic, labels permuted): cv5 CHOOSES step 15 (the parent rule is fooled); cv5m chooses 0 (point gain +0.455, CI-lo -0.587 <= 0); the same OOF numbers under both; ds_no_margin turns the choice back to 15 (CTRL-MARGIN, trainer-level)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   PASS  
+  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock
+  [timing] finalize: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+ok 11 learning curve (synthetic, 5/9 logs, on a REAL minted PASS token, 2,000 steps): sets nested; each set's OOF gain + CI at every step recomputes from its table; the n = |parent| set == the banked cv5 cv_select.json (argmax, OOF PDMS <= 1e-9, CTRL-PARENT PASS); the N-log set == the trainer's own cv5m; a banked table off by 1e-6 FAILS CTRL-PARENT (exit 1)
+ok 12 learning-curve token gate (AMENDMENT 1): with NO token, with a token minted for a different argv (--lr / --seed swapped) and under an active regression arm safehead_lc.py exits non-zero (REFUSED / does not verify) before any fit and writes no lc.json
+ok 13 refusals: the six template argvs are clean and route to their own profile; 12 moved / crossed levers are refused; the parent's cv5 profile still takes its own argv and refuses cv5m; a new flag without a G-DVB entry is refused
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--heldout-logs 0.0s, --navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB init-from sha256 822f3c18524dda01 is not C1's f09949e2a5f2f966 (MODEL_REGISTRY 14.6)
+ok 14 [ds_sh] gate: G-HYG G-DVB G-LIVE G-EVAL G-CKPT PASS on the synthetic cache (G-DVB also checks the built cv5m rule), G-CLOCK NA; the real profile's G-DVB refuses a non-C1 checkpoint
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'point_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'ep', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', '
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'ci_lo_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', 'estima
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     PASS  
+ok 15 [ds_sh] mutations: ds_no_margin -> G-DVB RED, ds_guard_no_ep -> G-DVB RED; the clean arm PASSes
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB init-from sha256 90e116be55abe5e7 is not C1's f09949e2a5f2f966 (MODEL_REGISTRY 14.6)
+ok 16 [ds_ep] gate: G-HYG G-DVB G-LIVE G-EVAL G-CKPT PASS on the synthetic cache (G-DVB also checks the built cv5m rule), G-CLOCK NA; the real profile's G-DVB refuses a non-C1 checkpoint
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'point_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'ep', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', '
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'ci_lo_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', 'estima
+  [timing] run: tree_manifest 0.6s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     PASS  
+ok 17 [ds_ep] mutations: ds_no_margin -> G-DVB RED, ds_guard_no_ep -> G-DVB RED; the clean arm PASSes
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     FAIL  SafeHeadConfig ACCEPTED an undeclared attribute (the slots guard is absent)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     FAIL  the trainer reads namespace attributes its parser does not declare: ['undeclared_lever_g_hyg']
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB lr: argv 0.0003 != the optimiser's [0.0006, 0.0006, 0.0006, 0.0006]
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  parser flag(s) ['undeclared_new_lever'] have no G-DVB entry: REFUSED (a new lever arrives with its check)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: declared loss term 'qfl_ttc' absent or non-finite; step 2: declared loss term 'qfl_ttc' absent or non-finite; step 3: declared loss term 'qfl_ttc' absent or non-finite; step 4: declared loss t
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  trained rows [0, 1, 3, 5] but the optimiser holds [0, 1, 5] (a trained row outside the optimiser never moves); trained row ttc did not move in 5 steps
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: frozen row2 received gradient 0.3673415184020996 (must be EXACTLY 0.0: the zero control); step 2: frozen row2 received gradient 0.35193586349487305 (must be EXACTLY 0.0: the zero control); ste
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-EVAL    FAIL  the read's change on the trained rows differs from the trainer's by 0.0554 > 0.0001
+  [timing] run: tree_manifest 0.4s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  round trip: the loaded head is not the in-memory head that was saved
+  [timing] run: tree_manifest 0.6s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  ckpt run A1 failed (rc 1):  | C:\Users\Admin\dsm6\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\safehead_train.py:248: UserWarning: Converting a tensor with requ
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-SUITE   FAIL  raw: rc 1, 'ZZTEST_PASS' NOT seen
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5 folds: 6 log(s) are not in the one fold (sorted-name index mod 5) (first ['2021.01.01.00.00.00_veh-1_tr0', '2021.01.01.00.00.01_veh-1_tr1']): a log must be in exactly one fold
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'point_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'ep', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', '
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'ci_lo_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', 'estima
+ok 18 [ds_sh] every deliberate-regression arm turns its check RED (14 arms)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--heldout-logs 0.0s, --navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   PASS  
+  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock
+  [timing] finalize: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+ok 19 [ds_sh] end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a cv5 swap, the trainer refuses a mismatched token and trains (2,000 steps, cv5m) on a matching one
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--heldout-logs 0.0s, --navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s)
+  G-HYG     FAIL  SafeHeadConfig ACCEPTED an undeclared attribute (the slots guard is absent)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-HYG     FAIL  the trainer reads namespace attributes its parser does not declare: ['undeclared_lever_g_hyg']
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB lr: argv 0.0003 != the optimiser's [0.0006]
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  parser flag(s) ['undeclared_new_lever'] have no G-DVB entry: REFUSED (a new lever arrives with its check)
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: declared loss term 'qfl_ep' absent or non-finite; step 2: declared loss term 'qfl_ep' absent or non-finite; step 3: declared loss term 'qfl_ep' absent or non-finite; step 4: declared loss term
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  trained rows [2] but the optimiser holds [-1] (a trained row outside the optimiser never moves); trained row ep did not move in 5 steps
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-LIVE    FAIL  step 1: frozen row0 received gradient 1.8261642456054688 (must be EXACTLY 0.0: the zero control); step 2: frozen row0 received gradient 1.8767890930175781 (must be EXACTLY 0.0: the zero control); step
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-EVAL    FAIL  the read's change on the trained rows differs from the trainer's by 0.0627 > 0.0001
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  round trip: the loaded head is not the in-memory head that was saved
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-CKPT    FAIL  ckpt run A1 failed (rc 1):  | C:\Users\Admin\dsm6\tip\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\safehead_train.py:248: UserWarning: Converting a tensor with requ
+  [timing] run: tree_manifest 0.4s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-SUITE   FAIL  raw: rc 1, 'ZZTEST_PASS' NOT seen
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5 folds: 6 log(s) are not in the one fold (sorted-name index mod 5) (first ['2021.01.01.00.00.00_veh-1_tr0', '2021.01.01.00.00.01_veh-1_tr1']): a log must be in exactly one fold
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'point_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'ep', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', '
+  [timing] run: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+  G-DVB     FAIL  G-DVB cv5m rule: the trainer built {'margin': 'ci_lo_gain_gt_0', 'guard': ['nc', 'dac', 'ttc', 'c'], 'guard_rule': 'ci_hi_delta_ge_0', 'n_boot': 10000, 'seed': 20260927, 'ci': '95_percentile', 'estima
+ok 20 [ds_ep] every deliberate-regression arm turns its check RED (14 arms)
+  [timing] run: tree_manifest 0.4s, data_manifest 0.0s (--heldout-logs 0.0s, --navtest-logs 0.0s, --cache-index 0.0s, --init-from 0.0s)
+  G-HYG     PASS  
+  G-DVB     PASS  
+  G-LIVE    PASS  
+  G-EVAL    PASS  
+  G-CKPT    PASS  
+  G-SUITE   PASS  
+  G-CLOCK   NA    the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock
+  [timing] finalize: tree_manifest 0.5s, data_manifest 0.0s (--cache-index 0.0s, --init-from 0.0s, --heldout-logs 0.0s, --navtest-logs 0.0s)
+ok 21 [ds_ep] end to end: the gate mints PASS, verify MATCHes the argv and REFUSES a cv5 swap, the trainer refuses a mismatched token and trains (2,000 steps, cv5m) on a matching one
+ZZSHDS_PASS 21

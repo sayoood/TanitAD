@@ -72,8 +72,9 @@ def mint_env(tmp, w, fam, argv, tag):
     keyf = tmp / f"keys_{tag}" / "gate.key"
     key = GT.load_key(keyf, create=True)
     gate_out = tmp / f"gate_{tag}"
-    L.run_checks(prof, argv, HERE.parent, gate_out, commit="ab" * 20, key=key)
-    verdict, path, tok = L.finalize(prof, argv, HERE.parent, gate_out, key, commit="ab" * 20)
+    commit = L._commit_of(HERE.parent, "ab" * 20)   # CODE AMENDMENT 2: the gate's own resolver (the SHIP_MANIFEST's commit in a shipped tree, as in every real G-SUITE run)
+    L.run_checks(prof, argv, HERE.parent, gate_out, commit=commit, key=key)
+    verdict, path, tok = L.finalize(prof, argv, HERE.parent, gate_out, key, commit=commit)
     assert verdict == "PASS", tok["reasons"]
     return {"TANITAD_GATE_KEY_FILE": str(keyf), T.TOKEN_ENV: str(path)}, path
 
@@ -518,8 +519,9 @@ def test_e2e(tmp, fam):
     key = GT.load_key(keyf, create=True)
     out, run_out = tmp / f"e2e_{fam}_gate", tmp / f"e2e_{fam}_run"
     argv = argv_ds(w, run_out, fam)
-    L.run_checks(prof, argv, HERE.parent, out, commit="ab" * 20, key=key)
-    verdict, path, tok = L.finalize(prof, argv, HERE.parent, out, key, commit="ab" * 20)
+    commit = L._commit_of(HERE.parent, "ab" * 20)   # CODE AMENDMENT 2 (same as mint_env)
+    L.run_checks(prof, argv, HERE.parent, out, commit=commit, key=key)
+    verdict, path, tok = L.finalize(prof, argv, HERE.parent, out, key, commit=commit)
     assert verdict == "PASS", tok["reasons"]
     okv, why, _ = GT.verify_token(path, argv, HERE.parent, key=key, profile=name, data_flags=SHG.DATA_FLAGS)
     assert okv, why
