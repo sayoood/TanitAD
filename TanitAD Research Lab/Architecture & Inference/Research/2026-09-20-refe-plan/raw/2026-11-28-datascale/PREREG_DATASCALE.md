@@ -1,6 +1,6 @@
 # PREREG_DATASCALE: SAFE-HEAD and EP-HEAD re-run on the 185-log navtrain cache, with a noise-margin CV rule (`H-REFE-DATASCALE-1`)
 
-MM, 2026-11-28. **STATUS: DRAFT, not frozen.** It freezes (sha256 into `PREREG_DATASCALE.sha256`) once the build in 9 passes its tests, and **before any fit opens `index_185.csv`**. Parent cards: `PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md` (SH), `PK/raw/2026-11-27-l2next/PREREG_EPHEAD.md` (EPH), `PREREG_SHMLP.md`. Everything not listed in 8 is the parent's, unchanged.
+MM, 2026-11-28. **STATUS: FROZEN 2026-11-28 (sha256 in `PREREG_DATASCALE.sha256`), after the build in 9 passed its tests and BEFORE any fit opened the 185-log index** (none exists yet: the seal chain waits on x150's chain.DONE). Parent cards: `PK/raw/2026-11-27-safehead/PREREG_SAFEHEAD.md` (SH), `PK/raw/2026-11-27-l2next/PREREG_EPHEAD.md` (EPH), `PREREG_SHMLP.md`. Everything not listed in 8 is the parent's, unchanged.
 
 **State at drafting (disclosed):**
 - **Parent outcomes (facts, MEASURED, banked):**
@@ -56,7 +56,7 @@ The parents' 3, **unchanged in every value**: lr 3e-4, batch 32, 2,000 steps, sa
 - **4.4 Score.** The table's `tr.pdms` at the new picks. Tier T1 (NAVSIM v1.1 PDMS, LQR-tracked), 12,146 tokens / 136 logs, the paired log-cluster bootstrap. Which variance each interval answers: the navtest bootstrap answers LOGS, s1 answers TRAINING, and inference variance is zero.
 
 ## 5. Measures, bars and the committed reading (per lever, A and B independently)
-- **M1-M4.** EPH 5's measures, unchanged, including **the four families in full** (LONGITUDINAL, LATERAL, TACTICAL and STRATEGIC, per the PI 2026-11-16 unpause). These run through `run_fam_chain_eph.sh`'s **role-mapped** form, never the landed `safehead/run_fam_chain.sh`, which has the known tactical role bug.
+- **M1-M4.** EPH 5's measures, unchanged, including **the four families in full** (LONGITUDINAL, LATERAL, TACTICAL and STRATEGIC, per the PI 2026-11-16 unpause). These run through `PK/raw/2026-11-28-datascale/run_fam_chain_ds.sh` (the proven EP-HEAD chain's **role-mapped** form, with the arm labels as arguments; SMOKE=50 first, which is its first run in this form), never the landed `safehead/run_fam_chain.sh`, which has the known tactical role bug.
 - **M5.** EPH 5's M5, plus the CV-side guard table.
 - **M6 (new, descriptive, does NOT decide): the learning curve.** Nested fit sets of n = 35 (exactly the parent's logs), 70, 110 and N logs, where each larger set adds x150 logs in sha256(log name) order. Each set runs the s0 recipe and 5-fold CV within itself and reports the OOF gain(s) with its log-cluster CI at every saved step. This is n x 5 extra CPU fits per lever.
 - **F, P2.** F = |PDMS(s0) - PDMS(s1)|; F_REFe = 0.1158; **P2 = 2 x max(F, F_REFe)**.
@@ -101,7 +101,13 @@ The parents' controls, unchanged (CTRL-ID, DET-NT, FEAT, FEAT-NT, S, SET, T2, SH
 5. CTRL-MARGIN, CTRL-PARENT and CTRL-INDEX are new; CTRL-CV and CTRL-RED are extended.
 
 ## 9. Build (staged; the MM lands; no commit by any agent)
-- **Code.** `refe/safehead_train.py --select cv5m` with the per-log OOF table. `refe/safehead_data.py` gains a bootstrap helper that reuses `p5c_read.Boot`, never a new estimator. An M6 driver. `refe/safehead_gate.py` gains profiles `refe_ds_{sh,ep}_{s0,s1,red}`, each new flag gets its G-DVB entry, and the new mutation arms are added. `launch_gate.py` is not patched.
+- **Code (as BUILT, `CODE.sha256` in this folder lists every file).** `refe/safehead_train.py --select cv5m` with the per-log OOF table.
+  - The rule, the per-log table and CTRL-INDEX live in a NEW `refe/safehead_cvm.py`, not in `safehead_data.py`, so the parents' `CODE.sha256` pins stay untouched.
+  - It reuses `p5c_read.Boot` UNMODIFIED: each log's pooled mean is expanded to its token count, which equals Boot on the raw tokens to 1e-9 (MEASURED, synthetic). There is no new estimator.
+  - The M6 driver is `refe/safehead_lc.py`, with CTRL-PARENT. CTRL-PARENT compares the trainer's own float64 `oof_pdms` path with the parent's banked `cv_select.json`.
+  - `refe/safehead_gate.py` gains profiles `refe_ds_{sh,ep}_{s0,s1,red}`. `cv5m` is a new VALUE of the existing `--select` flag, so there is no new flag. G-DVB compares the trainer's BUILT rule with `safehead_cvm.REGISTERED_RULE`.
+  - The mutation arms `ds_no_margin` and `ds_guard_no_ep` each turn G-DVB RED on both levers (CTRL-MARGIN). `launch_gate.py` is not patched.
+  - The read is `raw/2026-11-28-datascale/ds_read.py`, which imports the frozen `l2next_read.py` without editing it.
 - **Tests.** Synthetic fixtures for CTRL-MARGIN; and `test_safehead.py`, `test_safehead_next.py` and the pinned profile fingerprints unmoved (CTRL-SH-UNCHANGED for SH and EPH under `cv5`).
 - **Freeze.** The card is frozen after the build passes and before any fit on `index_185.csv`.
 
@@ -109,3 +115,9 @@ The parents' controls, unchanged (CTRL-ID, DET-NT, FEAT, FEAT-NT, S, SET, T2, SH
 - The final token count after label drops.
 - x150's EP parity against the harness. It is checked by a descriptive M5 rank-correlation, as in EPH 2.3.
 - That 2,000 steps is not too short (M6 and 7.4).
+- `ds_read.py`'s full `read` / `confirm` path has no end-to-end fixture: only the lever table, CTRL-CV(e) and the head-select check are tested.
+  ⇒ **Before the decision read, the read runs once on the parent EP-HEAD run1 heads under `--lever ds_ep` and must reproduce `READ_EPHEAD.json`'s M1 to 1e-9.** That is a plumbing check; no DATA-SCALE number is read in it.
+- Build tests (MEASURED, synthetic, 2026-11-28; logs in `datascale/build/test_logs/` and `datascale/stack_check/`):
+  - `test_safehead_ds` 20, `test_ds_read` 4, `test_safehead` 14 and `test_safehead_next` 17 (unchanged), all PASS.
+  - refe `test_launch_gate --static` 1,180 PASS, and the 8 profile-pin tests (49 -> 55 profiles) PASS.
+  - The stack files `test_launch_gate` 150 (+2 skipped), `test_launch_gate_pinned_split` 52 and `test_launch_gate_safe_directory` 2 all PASS on an NTFS tree. On exFAT E: they fail on git's "dubious ownership" refusal, which is the environment, not the build.

@@ -20,6 +20,10 @@ L2-NEXT (PREREG_SHMLP.md, PREREG_EPHEAD.md, PK/raw/2026-11-27-l2next/): six more
   extra deliberate-regression arms: sh_mlp_off (G-DVB: --mlp-hidden ignored) | sh_mlp_nonzero_init (G-DVB + G-EVAL: the last layer is not zero) | sh_cv_token_folds (G-DVB: folds by
   token, not by log: a log would sit in train AND test)
 
+DATA-SCALE (PREREG_DATASCALE.md, PK/raw/2026-11-28-datascale/): six more NEW profiles, same runner, same checks, `--select cv5m` (cv5 + a log-cluster CI margin + an OOF guard):
+  refe_ds_sh_{s0,s1,red}   SAFE-HEAD recipe (--rows 0,1,3,5) on the 185-log index        refe_ds_ep_{s0,s1,red}   EP-HEAD recipe (--rows 2) on the 185-log index
+  extra deliberate-regression arms (G-DVB reads the rule the trainer BUILT): ds_no_margin (the CI condition is dropped) | ds_guard_no_ep (EP is dropped from the guard)
+
     python launch_gate.py refusals --profile refe_safehead_s0 --args "$ARGS"
     python launch_gate.py run --profile refe_safehead_s0 --pkg <pkg> --args "$ARGS" --out-dir <gate dir> --commit <landed 40-hex>
     python launch_gate.py verify --profile refe_safehead_s0 --token <PASS_*.json> --args "$ARGS" --pkg <pkg>
@@ -41,6 +45,7 @@ sys.path.insert(0, str(HERE))
 import numpy as np  # noqa: E402
 import gate_checks as C  # noqa: E402
 import safehead_data as D  # noqa: E402
+import safehead_cvm as CVM  # noqa: E402
 
 C1_SHA256 = "f09949e2a5f2f9661ad47457e77ddfd10f49117d64e095487809c1d04f7a34a4"     # MODEL_REGISTRY 14.6 C1 = launch_gate.SCORERFT_BASE_SHA256 (asserted in the test)
 DATA_FLAGS = ("--cache-index", "--init-from", "--heldout-logs", "--navtest-logs")
@@ -77,9 +82,25 @@ FAMILIES = {
 NEXT_PROFILE_NAMES = tuple(n for f in FAMILIES.values() for n in f["name"].values())
 
 
+# ---- DATA-SCALE (PREREG_DATASCALE.md): `--select cv5m`; six more NEW profiles (the 3 SAFE-HEAD and the 6 L2-NEXT dicts stay byte-identical) ---------------------------------
+SUITE_DS = SUITE_NEXT + [{"script": "test_safehead_ds.py", "args": ["--fast"], "token": "ZZSHDS_PASS"}]
+DS_CARD = "PK/raw/2026-11-28-datascale/PREREG_DATASCALE.md"
+DS_FAMILIES = {
+    "ds_sh": {"registered": {**REGISTERED, "--select": "cv5m"}, "live_terms": LIVE_TERMS, "card": DS_CARD,
+              "name": {"s0": "refe_ds_sh_s0", "s1": "refe_ds_sh_s1", "red": "refe_ds_sh_red"}},
+    "ds_ep": {"registered": {**REGISTERED, "--rows": "2", "--select": "cv5m"}, "live_terms": ("qfl_ep",), "card": DS_CARD,
+              "name": {"s0": "refe_ds_ep_s0", "s1": "refe_ds_ep_s1", "red": "refe_ds_ep_red"}},
+}
+DS_PROFILE_NAMES = tuple(n for f in DS_FAMILIES.values() for n in f["name"].values())
+ALL_FAMILIES = {**FAMILIES, **DS_FAMILIES}
+
+
 def family_of_argv(argv: list) -> str:
     import gate_token as GT
     sel, mh = GT.flag_values(argv, "--select"), GT.flag_values(argv, "--mlp-hidden")
+    if sel and sel[0] == "cv5m":
+        rows = GT.flag_values(argv, "--rows")
+        return "ds_ep" if rows and rows[0] == "2" else "ds_sh"
     if sel and sel[0] == "cv5":
         return "ephead"
     if mh and int(mh[0]) > 0:
@@ -89,7 +110,7 @@ def family_of_argv(argv: list) -> str:
 
 def _next_profiles() -> dict:
     out = {}
-    for fam, F in FAMILIES.items():
+    for fam, F in ALL_FAMILIES.items():
         for arm, spec in ARMS.items():
             req = {**{f: None for f in DATA_FLAGS + OUTPUT_FLAGS}, **F["registered"], "--seed": str(spec["seed"])}
             if spec["perm"] is not None:
@@ -99,7 +120,7 @@ def _next_profiles() -> dict:
                          "parser_module": "safehead_train", "trainer_src": "safehead_train.py", "namespace_funcs": ("build_config", "run"),
                          "live_terms": F["live_terms"], "data_flags": DATA_FLAGS, "output_flags": OUTPUT_FLAGS,
                          "forbidden_flags": CONTROL_FLAGS + (() if spec["perm"] is not None else ("--permute-labels-seed",)),
-                         "required_flags": req, "registered": dict(F["registered"]), "suite": [dict(e) for e in SUITE_NEXT], "checks": CHECKS, "na_ok": ("G-CLOCK",),
+                         "required_flags": req, "registered": dict(F["registered"]), "suite": [dict(e) for e in (SUITE_DS if fam in DS_FAMILIES else SUITE_NEXT)], "checks": CHECKS, "na_ok": ("G-CLOCK",),
                          "clock_na": "the label cache is fixed and sealed by sha256 (--cache-index): there is no label clock",
                          "mintable": True, "require_commit": True, "rehearsal": False, "init_from_sha256": C1_SHA256, "smoke_steps": SMOKE_STEPS, "card": F["card"]}
     return out
@@ -127,7 +148,7 @@ def profiles() -> dict:
 def profile_name_for_argv(argv: list) -> str:
     import gate_token as GT
     fam = family_of_argv(argv)
-    names = PROFILE_NAME if fam == "safehead" else FAMILIES[fam]["name"]
+    names = PROFILE_NAME if fam == "safehead" else ALL_FAMILIES[fam]["name"]
     perm = GT.flag_values(argv, "--permute-labels-seed")
     if perm and int(perm[0]) >= 0:
         return names["red"]
@@ -243,7 +264,7 @@ def check_dvb(prof: dict, argv: list, work: Path, data: dict, arm=None, rehearsa
         return C.verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
     b = json.loads(bj.read_text(encoding="utf-8"))
     det["built"] = {k: b.get(k) for k in ("seed", "steps", "lr", "batch", "gamma", "rows", "save_steps", "permute_labels_seed", "optimizer", "loss", "mlp_hidden", "select",
-                                          "n_trainable_params", "mlp_last_layer_abs_sum_init")}
+                                          "n_trainable_params", "mlp_last_layer_abs_sum_init", "cv_rule")}
     want = {"seed": ns.seed, "steps": ns.steps, "batch": ns.batch, "gamma": ns.gamma, "permute_labels_seed": ns.permute_labels_seed,
             "save_steps": list(T._ints(ns.save_steps)), "mlp_hidden": ns.mlp_hidden, "select": ns.select}
     for k, v in want.items():
@@ -268,7 +289,14 @@ def check_dvb(prof: dict, argv: list, work: Path, data: dict, arm=None, rehearsa
         reasons.append(f"G-DVB trainable parameters: the optimiser holds {b.get('n_trainable_params')}, the argv implies {n_exp} ({len(rows)} rows, mlp_hidden {H})")
     if H and b.get("mlp_last_layer_abs_sum_init") != 0.0:
         reasons.append(f"G-DVB zero-init: the MLP's last layer has |w|+|b| = {b.get('mlp_last_layer_abs_sum_init')!r} at init, not EXACTLY 0.0 (step 0 would not be C1)")
-    if ns.select == "cv5":
+    if ns.select == "cv5m":                                                                     # DATA-SCALE: the rule the trainer BUILT is the registered one (a dropped CI condition or guard row is RED)
+        import json as _json
+        det["cv_rule"] = b.get("cv_rule")
+        if _json.loads(_json.dumps(b.get("cv_rule"))) != _json.loads(_json.dumps(CVM.REGISTERED_RULE)):
+            reasons.append(f"G-DVB cv5m rule: the trainer built {b.get('cv_rule')!r}, the registered rule is {CVM.REGISTERED_RULE!r}")
+    elif b.get("cv_rule") is not None:
+        reasons.append(f"G-DVB: --select {ns.select} but the trainer built a cv5m rule {b.get('cv_rule')!r}")
+    if ns.select in ("cv5", "cv5m"):
         idx = D.read_index(ns.cache_index)
         exp = {lg: [i % T.N_FOLDS] for i, lg in enumerate(sorted({r["log"] for r in idx if r["split"] in D.SPLITS_NAVTRAIN}))}
         det["cv_logs"] = len(exp)

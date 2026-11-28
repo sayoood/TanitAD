@@ -107,7 +107,7 @@ def chk_registry():
     for nm in ALL_NAMES.values():
         pr = L.PROFILES[nm]
         ok((pr["field_store_sha256"], pr["field_store_keys"], pr["field_loss_sha256"]) == (L.FIELD_P7_STORE_SHA256, L.FIELD_P7_STORE_KEYS, L.FIELD_P7_LOSS_SHA256))
-    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 49)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)  # + the 6 L2-NEXT profiles (PREREG_SHMLP, PREREG_EPHEAD, 2026-11-27)
+    ok(L.FIELD_P7_ARM_SEED == {"F": 0, "C": 0, "Cs": 1, "Fs": 1} and L.FIELD_P7_REP_BASE == {"Cs": "C", "Fs": "F"} and len(L.PROFILES) == 55)  # + the 4 SCORER-FT profiles (PREREG_SCORER_FT, PI 2026-11-20)  # + refe_p5c_c1r (C1's seed-1 replicate, PI go 2026-11-20)  # + the 3 SAFE-HEAD profiles (PREREG_SAFEHEAD, 2026-11-27)  # + the 6 L2-NEXT profiles (PREREG_SHMLP, PREREG_EPHEAD, 2026-11-27)
     ok(L.FIELD_P7_LOSS_SHA256 == hashlib.sha256((HERE / "field_loss.py").read_bytes().replace(b"\r\n", b"\n")).hexdigest(), "the registered field_loss.py hash is the shipped file's")
 
 

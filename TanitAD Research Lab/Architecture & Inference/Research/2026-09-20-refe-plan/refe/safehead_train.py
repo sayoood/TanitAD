@@ -36,6 +36,7 @@ sys.path.insert(0, str(HERE))
 
 import numpy as np  # noqa: E402
 import safehead_data as D  # noqa: E402
+import safehead_cvm as CVM  # noqa: E402
 
 ARM_ENV = "TANITAD_GATE_ARM"                 # the launch gate's deliberate-regression arm (gate_checks.ARM_ENV); honoured ONLY in --build-only / --smoke-steps
 TOKEN_ENV = "TANITAD_SH_GATE_TOKEN"
@@ -44,7 +45,8 @@ OPT = {"name": "Adam", "betas": (0.9, 0.999), "eps": 1e-8, "weight_decay": 0.0} 
 TERM_OF_ROW = {0: "qfl_nc", 1: "qfl_dac", 2: "qfl_ep", 3: "qfl_ttc", 5: "qfl_ddc"}  # one term per trained row; their mean is the loss
 LIVE_TERMS = ("qfl_nc", "qfl_dac", "qfl_ttc", "qfl_ddc")                            # the SAFE-HEAD arm's four terms (kept: safehead_gate.LIVE_TERMS)
 FEAT_MAX, FEAT_P99 = 1e-4, 1e-4         # CTRL-FEAT: C1's head on the cached float32 s reproduces the cached logits (the data agent MEASURED 7.6e-6; a wrong tensor is off by O(1))
-SELECTS = ("heldout", "cv5")
+SELECTS = ("heldout", "cv5", "cv5m")
+CV_SELECTS = ("cv5", "cv5m")                                                                   # the two 5-fold log-CV rules; cv5m = cv5 + the noise margin and guard (PREREG_DATASCALE 4.3)
 N_FOLDS = 5
 
 
@@ -90,7 +92,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--save-steps", required=True, help="steps whose head is saved; the selection rule chooses among them")
     ap.add_argument("--permute-labels-seed", type=int, default=-1, help="CTRL-RED ONLY: permute the label rows across train tokens (-1 = off)")
     ap.add_argument("--mlp-hidden", type=int, default=0, help="SH-MLP: hidden width of the residual MLP on each trained row (0 = the linear head, SAFE-HEAD)")
-    ap.add_argument("--select", default="heldout", choices=SELECTS, help="heldout = SAFE-HEAD 4.3 (6 SFT held-out logs); cv5 = EP-HEAD 4.3 (5-fold log CV over all navtrain logs)")
+    ap.add_argument("--select", default="heldout", choices=SELECTS, help="heldout = SAFE-HEAD 4.3 (6 SFT held-out logs); cv5 = EP-HEAD 4.3 (5-fold log CV over all navtrain logs); cv5m = DATA-SCALE 4.3 (cv5 + a log-cluster CI margin and an OOF sub-score guard)")
     ap.add_argument("--smoke-steps", type=int, default=0, help="GATE ONLY (forbidden in a launch): train this many steps; heads marked smoke")
     ap.add_argument("--build-only", action="store_true", help="GATE ONLY (forbidden in a launch): build, write built.json, exit")
     return ap
@@ -118,7 +120,7 @@ def require_token(argv: list) -> dict:
     import safehead_gate as SHG
     tok = os.environ.get(TOKEN_ENV)
     if not tok:
-        raise SystemExit(f"REFUSED: no launch-gate token ({TOKEN_ENV} unset). Run `launch_gate.py run --profile <refe_safehead_* | refe_shmlp_* | refe_ephead_*>` first (CLAUDE.md, PI 2026-09-26)")
+        raise SystemExit(f"REFUSED: no launch-gate token ({TOKEN_ENV} unset). Run `launch_gate.py run --profile <refe_safehead_* | refe_shmlp_* | refe_ephead_* | refe_ds_*>` first (CLAUDE.md, PI 2026-09-26)")
     prof = SHG.profile_name_for_argv(argv)
     key = GT.load_key(None, create=False)
     ok, reasons, info = GT.verify_token(tok, list(argv), HERE.parent, key=key, profile=prof, data_flags=SHG.DATA_FLAGS)
@@ -285,8 +287,8 @@ def run(argv: list) -> int:
         tok = None
     if sorted(cfg.rows) != sorted(set(cfg.rows)) or not set(cfg.rows) <= set(D.TRAINABLE_ROWS) or not cfg.rows:
         raise SystemExit(f"REFUSED: --rows {cfg.rows}: only the rows {D.TRAINABLE_ROWS} may train (the C row {4} is never a parameter)")
-    if 2 in cfg.rows and cfg.select != "cv5":
-        raise SystemExit("REFUSED: --rows containing 2 (EP) needs --select cv5 (the EP row has no held-out rule of the SAFE-HEAD card: its label is the rebuilt cache's soft EP)")
+    if 2 in cfg.rows and cfg.select not in CV_SELECTS:
+        raise SystemExit("REFUSED: --rows containing 2 (EP) needs --select cv5 or cv5m (the EP row has no held-out rule of the SAFE-HEAD card: its label is the rebuilt cache's soft EP)")
     if 2 in cfg.rows and len(cfg.rows) != 1:
         raise SystemExit("REFUSED: EP-HEAD trains row 2 ALONE (--rows 2)")
     if cfg.mlp_hidden < 0:
@@ -312,7 +314,7 @@ def run(argv: list) -> int:
     if feat["max_abs"] > FEAT_MAX or feat["p99_abs"] > FEAT_P99:
         raise SystemExit(f"REFUSED (CTRL-FEAT): C1's head on the cached s is not the cached logits ({feat}): s is not the head's input, or init-from is not the cache's model")
     ho = np.where(c["split"] == "heldout")[0]
-    cv = cfg.select == "cv5"
+    cv = cfg.select in CV_SELECTS
     pool = np.arange(len(c["token"])) if cv else np.where(c["split"] == "train")[0]            # the tokens the head is FITTED on: all navtrain (cv5) | the 29 train logs
     if len(pool) < cfg.batch or len(ho) == 0:
         raise SystemExit(f"REFUSED: {len(pool)} train-pool / {len(ho)} held-out tokens (batch {cfg.batch})")
@@ -331,7 +333,7 @@ def run(argv: list) -> int:
     if cv:
         fold_of_log = D.cv_folds(c["log"][pool], N_FOLDS)
         if len(fold_of_log) < N_FOLDS:
-            raise SystemExit(f"REFUSED: --select cv5 needs >= {N_FOLDS} logs, the cache has {len(fold_of_log)}")
+            raise SystemExit(f"REFUSED: --select {cfg.select} needs >= {N_FOLDS} logs, the cache has {len(fold_of_log)}")
         tok_fold = (np.arange(len(pool)) % N_FOLDS) if arm == "sh_cv_token_folds" else np.array([fold_of_log[lg] for lg in c["log"][pool]])
         for k in range(N_FOLDS):
             if (tok_fold != k).sum() < cfg.batch or (tok_fold == k).sum() == 0:
@@ -349,6 +351,8 @@ def run(argv: list) -> int:
              "mlp_hidden": int(M.mlp_hidden), "select": cfg.select, "n_trainable_params": M.n_params, "mlp_last_layer_abs_sum_init": M.last_layer_init_abs,
              "cv_fold_of_log": ({lg: sorted({int(f) for f in tok_fold[c["log"][pool] == lg]}) for lg in sorted(fold_of_log)} if cv else None),
              "gate_mode": "build" if cfg.build_only else ("smoke" if cfg.smoke_steps else None), "arm": arm}
+    if cfg.select == "cv5m":                                                                    # only cv5m records its rule: cv5 / heldout built.json stay byte-identical
+        built["cv_rule"] = CVM.rule_for_arm(arm)
     (out / "built.json").write_text(json.dumps(built, indent=1), encoding="utf-8")
     if cfg.build_only:
         print("ZZSH_BUILD_OK", flush=True)
@@ -360,7 +364,7 @@ def run(argv: list) -> int:
     if M.mlp_hidden:                                                                            # only a NON-default lever enters the head's meta (SAFE-HEAD heads stay byte-identical)
         meta0["mlp_hidden"] = int(M.mlp_hidden)
     if cv:
-        meta0["select"] = "cv5"
+        meta0["select"] = cfg.select                                                            # "cv5" stays byte-identical to the parent heads
     sel_cv = cv_select(c, pool, tok_fold, S, YT, EXTRA, cfg, M, W0, b0, save, n_steps, arm) if cv else None
     if sel_cv is not None:
         (out / "cv_select.json").write_text(json.dumps(sel_cv, indent=1), encoding="utf-8")
@@ -389,7 +393,7 @@ def run(argv: list) -> int:
                  cached_pick=c["pick"][ho], ho_s=c["s"][ho], ho_logits=c["logits"][ho], **extra)
     if cv:
         sel = sel_cv
-        line = (f"cv5 chosen_step {sel['chosen_step']} oof_pdms {sel['per_step'][str(sel['chosen_step'])]['oof_pdms']:.4f} "
+        line = (f"{cfg.select} chosen_step {sel['chosen_step']} oof_pdms {sel['per_step'][str(sel['chosen_step'])]['oof_pdms']:.4f} "
                 f"(step 0: {sel['per_step']['0']['oof_pdms']:.4f})")
     else:
         sel = heldout_select(c, ho, out, save, W0, b0, rows)
@@ -402,7 +406,7 @@ def run(argv: list) -> int:
 
 
 def cv_select(c, pool, tok_fold, S, YT, EXTRA, cfg, M0, W0, b0, save, n_steps, arm) -> dict:
-    """PREREG_EPHEAD 4.3: 5-fold LOG-level cross-validation over ALL navtrain logs.  For each fold k a FRESH model is trained on the other 4 folds (same recipe, same seed,
+    """PREREG_EPHEAD 4.3 (and, for --select cv5m, PREREG_DATASCALE 4.3 on top: the per-log table, the margin and the guard): 5-fold LOG-level cross-validation over ALL navtrain logs.  For each fold k a FRESH model is trained on the other 4 folds (same recipe, same seed,
     same steps), and at every saved step its head scores the fold-k tokens (the read's delta arithmetic, safehead_data.head_logits).  Per step the OUT-OF-FOLD pooled mean
     tracked PDMS of the agg32 pick is formed; the chosen step is the argmax, ties -> the EARLIEST; step 0 (C1's own head) is a column of the same table.  The cache's
     PDMS is the rebuilt metric cache (approximate, disclosed in the card): the rule only RANKS steps; every navtest number comes from the harness-exact table."""
@@ -444,6 +448,20 @@ def cv_select(c, pool, tok_fold, S, YT, EXTRA, cfg, M0, W0, b0, save, n_steps, a
         per[str(s)]["descriptive_logs_improved_worsened_of"] = [int((pl > 0).sum()), int((pl < 0).sum()), int(len(ulogs))]
     best = max(per[str(s)]["oof_pdms"] for s in save)
     chosen = min(s for s in save if per[str(s)]["oof_pdms"] == best)
+    if cfg.select == "cv5m":                                                                    # PREREG_DATASCALE 4.3: the per-log table, then the margin + guard decision FROM it
+        k_of = {s: picks[s] for s in save}
+        vals = {"pdms": pdms, "nc": c["tr_nc"][pool], "dac": c["tr_dac"][pool], "ttc": c["tr_ttc"][pool], "ep": ep, "c": c["tr_c"][pool]}
+        tab = CVM.build_table(logs, k_of, vals)
+        rule = CVM.rule_for_arm(arm)
+        dec = CVM.decide(tab, save, rule)
+        return {"rule": "cv5m (PREREG_DATASCALE 4.3): step s > 0 is eligible iff CI-lo(OOF gain) > 0 (paired log-cluster bootstrap, p5c_read.Boot, 10,000 draws, seed 20260927, "
+                        "95 % percentile) AND no OOF sub-score delta (NC, DAC, TTC, EP, C) has CI-hi < 0; chosen = the eligible step with the largest OOF gain, ties earliest; "
+                        "none eligible = step 0 (NULL-CV).  Folds = sorted log name, index mod 5, over ALL navtrain logs.  The decision is computed from `per_log`.",
+                "select": "cv5m", "n_tokens": int(n), "n_logs": len(ulogs), "folds": {str(f): sorted(lg for lg in ulogs if D.cv_folds(ulogs, N_FOLDS)[lg] == f) for f in range(N_FOLDS)},
+                "per_step": per, "per_log": tab, "margin_rule": rule, "margin": dec["per_step"], "eligible_steps": dec["eligible_steps"],
+                "chosen_step": int(dec["chosen_step"]), "chosen_is_untrained": dec["chosen_step"] == 0, "no_margin_argmax_step": int(chosen),
+                "no_margin_argmax_step_from_table": dec["no_margin_argmax_step_from_table"],
+                "evidence": "MEASURED (out-of-fold navtrain, rebuilt-cache PDMS; NOT navtest)"}
     return {"rule": "argmax over --save-steps of the out-of-fold pooled mean tracked PDMS of the agg32 pick (cache tr_pdms, 5-fold log CV over ALL navtrain logs, folds = sorted "
                     "log name index mod 5); ties -> earliest; step 0 = C1 (PREREG_EPHEAD 4.3)",
             "n_tokens": int(n), "n_logs": len(ulogs), "folds": {str(f): sorted(lg for lg in ulogs if D.cv_folds(ulogs, N_FOLDS)[lg] == f) for f in range(N_FOLDS)},
